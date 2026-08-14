@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ultimate-ai-core
+    env: python
+    region: ohio # or your closest preferred region
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn app:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.4
+      - key: AI_API_KEY
+        sync: false # You will securely plug this into Render's dashboard later
