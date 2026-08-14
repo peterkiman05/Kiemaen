@@ -1,13 +1,14 @@
 import os
+import subprocess
+import tempfile
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 import requests
 from supabase import create_client, Client
 
-app = FastAPI(title="Ultimate AI Core")
+app = FastAPI(title="Ultimate AI Core - Extended Scope")
 
-# Initialize Supabase connection safely
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
@@ -23,19 +24,20 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 class ChatRequest(BaseModel):
     prompt: str
     persona: str = "general"
+    execute_code: bool = False
 
 PERSONAS = {
     "general": "You are a helpful, versatile personal AI collaborator.",
     "engineering": "You are an expert civil engineering assistant specializing in structural analysis, mechanics of materials, and design standards.",
     "trading": "You are a professional financial trading mentor specializing in proprietary trading challenges, risk management, and technical analysis.",
-    "coding": "You are an expert software developer proficient in Python, TypeScript, and modern web application deployment."
+    "coding": "You are an expert software developer proficient in Python, TypeScript, and modern web application deployment. If asked, you can write and verify executable python code snippets."
 }
 
 @app.get("/", response_class=HTMLResponse)
 def home():
     if os.path.exists("index.html"):
         return FileResponse("index.html")
-    return "<h3>Ultimate AI Core is Online, but index.html was not found.</h3>"
+    return "<h3>Ultimate AI Core is Online</h3>"
 
 @app.post("/generate")
 def generate_ai(request: ChatRequest):
@@ -67,7 +69,7 @@ def generate_ai(request: ChatRequest):
     else:
         ai_response = "GROQ_API_KEY is not configured on the server."
 
-    # Save to Supabase if connected
+    # Log interaction to Supabase
     if supabase:
         try:
             supabase.table("chat_history").insert({
