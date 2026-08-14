@@ -1,7 +1,7 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
-import os
 import requests
 from supabase import create_client, Client
 
@@ -20,12 +20,10 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Request body model
 class ChatRequest(BaseModel):
     prompt: str
     persona: str = "general"
 
-# Persona system prompts dictionary
 PERSONAS = {
     "general": "You are a helpful, versatile personal AI collaborator.",
     "engineering": "You are an expert civil engineering assistant specializing in structural analysis, mechanics of materials, and design standards.",
@@ -63,7 +61,7 @@ def generate_ai(request: ChatRequest):
                 data = response.json()
                 ai_response = data["choices"][0]["message"]["content"]
             else:
-                ai_response = f"API Error: {response.text}"
+                ai_response = f"API Error ({response.status_code}): {response.text}"
         except Exception as e:
             ai_response = f"Connection error: {str(e)}"
     else:
