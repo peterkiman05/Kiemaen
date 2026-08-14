@@ -3,43 +3,49 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import requests
 
-app = FastAPI(title="Ultimate AI Core", version="1.0")
+app = FastAPI(title="Ultimate AI Core - Multi-Persona", version="2.0")
 
 class PromptRequest(BaseModel):
     prompt: str
-    model: str = "openai/gpt-oss-20b:free"  # Default open-tier model via OpenRouter
+    persona: str = "general"  # Options: general, engineering, trading, coding
+    model: str = "openai/gpt-oss-20b:free"
+
+# Define different expert system prompts
+PERSONAS = {
+    "general": "You are the core intelligence of an advanced, multi-system AI.",
+    "engineering": "You are an expert Civil Engineering assistant specializing in mechanics, structures, material science, and numerical methods.",
+    "trading": "You are an expert financial trading and proprietary risk-management strategist familiar with MetaTrader, market structures, and price action.",
+    "coding": "You are an elite software developer and debugging expert proficient in Python, TypeScript, and cloud deployment pipelines."
+}
 
 @app.get("/")
 def home():
     return {
         "status": "Online", 
-        "architecture": "Cloud-Native GitHub + Render Pipeline",
-        "message": "Your ultimate AI core is successfully deployed and ready."
+        "version": "2.0 Multi-Persona Active",
+        "available_personas": list(PERSONAS.keys())
     }
 
 @app.post("/generate")
 def generate_text(request: PromptRequest):
-    # Securely fetch your free API key from Render's environment variables
     api_key = os.getenv("AI_API_KEY")
     if not api_key:
-        raise HTTPException(
-            status_code=500, 
-            detail="Configuration Error: AI_API_KEY is missing in environment variables."
-        )
+        raise HTTPException(status_code=500, detail="Configuration Error: AI_API_KEY is missing.")
     
-    # OpenRouter endpoint (compatible with OpenAI standard request formats)
     url = "https://openrouter.ai/api/v1/chat/completions"
-    
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": "https://github.com/ultimate-ai-core", # Required by OpenRouter for ranking
+        "HTTP-Referer": "https://github.com/peterkiman05/Kiemaen",
         "X-Title": "Ultimate AI System"
     }
+    
+    # Select the system prompt based on the chosen persona
+    system_prompt = PERSONAS.get(request.persona, PERSONAS["general"])
     
     payload = {
         "model": request.model,
         "messages": [
-            {"role": "system", "content": "You are the core intelligence of an advanced, multi-system AI."},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": request.prompt}
         ]
     }
@@ -52,7 +58,11 @@ def generate_text(request: PromptRequest):
             raise HTTPException(status_code=response.status_code, detail=response_data)
             
         ai_reply = response_data["choices"][0]["message"]["content"]
-        return {"model_used": request.model, "response": ai_reply}
+        return {
+            "persona_used": request.persona,
+            "model_used": request.model,
+            "response": ai_reply
+        }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
