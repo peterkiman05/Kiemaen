@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate AI Core - Chat Interface</title>
+    <title>Ultimate AI Core - Extended Scope</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -37,19 +37,28 @@
         <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto">
             <div class="flex justify-start">
                 <div class="bg-gray-800 p-3 rounded-lg max-w-xl text-sm border border-gray-700">
-                    System online. Choose a persona above and start typing your prompt below!
+                    System online with extended scope. Upload a file or type a prompt below!
                 </div>
             </div>
         </div>
 
-        <!-- Input Form -->
+        <!-- Input Form with File Attachment -->
         <div class="bg-gray-800 p-4 border-t border-gray-700">
-            <form id="chat-form" class="max-w-3xl mx-auto flex gap-2">
-                <input type="text" id="prompt-input" placeholder="Type your message here..." autocomplete="off"
-                    class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500 text-white">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition">
-                    Send
-                </button>
+            <form id="chat-form" class="max-w-3xl mx-auto flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <input type="text" id="prompt-input" placeholder="Type your message or ask about your uploaded file..." autocomplete="off"
+                        class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500 text-white">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition">
+                        Send
+                    </button>
+                </div>
+                <div class="flex items-center justify-between text-xs text-gray-400 px-1">
+                    <label class="cursor-pointer flex items-center gap-1 hover:text-blue-400">
+                        <span>📎 Attach Code/Text File</span>
+                        <input type="file" id="file-input" class="hidden" accept=".py,.txt,.md,.json,.csv,.js,.ts">
+                    </label>
+                    <span id="file-name" class="italic text-gray-500">No file attached</span>
+                </div>
             </form>
         </div>
     </div>
@@ -60,8 +69,26 @@
         const container = document.getElementById('chat-container');
         const personaSelect = document.getElementById('persona');
         const historyList = document.getElementById('history-list');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name');
 
-        // Fetch history on load
+        let attachedFileContent = "";
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    attachedFileContent = event.target.result;
+                };
+                reader.readAsText(file);
+            } else {
+                fileNameDisplay.textContent = "No file attached";
+                attachedFileContent = "";
+            }
+        });
+
         async function loadHistory() {
             try {
                 const res = await fetch('/history');
@@ -88,20 +115,30 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const text = input.value.trim();
+            let text = input.value.trim();
             const persona = personaSelect.value;
-            if (!text) return;
+            
+            if (!text && !attachedFileContent) return;
+
+            if (attachedFileContent) {
+                text = `${text}\n\n[Attached File Context]:\n\`\`\`\n${attachedFileContent}\n\`\`\``;
+            }
 
             // Append User Message safely
             const userMsgDiv = document.createElement('div');
             userMsgDiv.className = "flex justify-end";
             userMsgDiv.innerHTML = `
-                <div class="bg-blue-600 text-white p-3 rounded-lg max-w-xl text-sm">
-                    ${escapeHtml(text)}
+                <div class="bg-blue-600 text-white p-3 rounded-lg max-w-xl text-sm whitespace-pre-wrap">
+                    ${escapeHtml(input.value.trim())} ${fileInput.files[0] ? `📎 (${fileInput.files[0].name})` : ''}
                 </div>`;
             container.appendChild(userMsgDiv);
             
             input.value = '';
+            fileInput.value = '';
+            fileNameDisplay.textContent = "No file attached";
+            const currentFileContentToSend = text;
+            attachedFileContent = "";
+
             container.scrollTop = container.scrollHeight;
 
             // Append Loading Indicator
@@ -118,11 +155,10 @@
                 const response = await fetch('/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: text, persona: persona })
+                    body: JSON.stringify({ prompt: currentFileContentToSend, persona: persona })
                 });
                 const data = await response.json();
                 
-                // Remove loading node safely
                 if (container.contains(loadingDiv)) {
                     container.removeChild(loadingDiv);
                 }
@@ -130,7 +166,6 @@
                 const aiReply = data.response || data.detail || "Error generating response.";
                 const parsedMarkdown = marked.parse(aiReply);
 
-                // Append AI Response safely
                 const aiMsgDiv = document.createElement('div');
                 aiMsgDiv.className = "flex justify-start";
                 aiMsgDiv.innerHTML = `
@@ -139,7 +174,7 @@
                     </div>`;
                 container.appendChild(aiMsgDiv);
                 
-                loadHistory(); // Refresh history sidebar automatically
+                loadHistory();
             } catch (err) {
                 if (container.contains(loadingDiv)) {
                     container.removeChild(loadingDiv);
