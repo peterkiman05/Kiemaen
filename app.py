@@ -3,9 +3,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 import requests
+import yfinance as yf
 from supabase import create_client, Client
 
-app = FastAPI(title="Ultimate AI Core - Extended Scope")
+app = FastAPI(title="Ultimate AI Core - Live Market Integration")
 
 # Initialize Supabase connection safely
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -31,6 +32,29 @@ PERSONAS = {
     "coding": "You are an expert software developer proficient in Python, TypeScript, and modern web application deployment. Always provide clean, production-ready code blocks with brief execution notes."
 }
 
+def fetch_live_market_data(prompt: str) -> str:
+    """Detects if the user is asking about gold/XAUUSD or crypto and fetches live data."""
+    prompt_lower = prompt.lower()
+    live_context = ""
+    
+    try:
+        if "gold" in prompt_lower or "xauusd" in prompt_lower:
+            ticker = yf.Ticker("GC=F") # Gold Futures ticker
+            todays_data = ticker.history(period="1d")
+            if not todays_data.empty:
+                current_price = todays_data['Close'].iloc[-1]
+                live_context = f"\n\n[Live Market Data Feed - Gold (GC=F)]: Current live price is approximately ${current_price:.2f} USD."
+        elif "btc" in prompt_lower or "bitcoin" in prompt_lower:
+            ticker = yf.Ticker("BTC-USD")
+            todays_data = ticker.history(period="1d")
+            if not todays_data.empty:
+                current_price = todays_data['Close'].iloc[-1]
+                live_context = f"\n\n[Live Market Data Feed - Bitcoin]: Current live price is approximately ${current_price:.2f} USD."
+    except Exception as e:
+        print(f"Market fetch error: {e}")
+        
+    return live_context
+
 @app.get("/", response_class=HTMLResponse)
 def home():
     if os.path.exists("index.html"):
@@ -42,6 +66,13 @@ def generate_ai(request: ChatRequest):
     system_prompt = PERSONAS.get(request.persona, PERSONAS["general"])
     ai_response = "AI service unavailable."
 
+    # Append live market data if the trading persona or relevant keywords are used
+    enhanced_prompt = request.prompt
+    if request.persona == "trading" or "gold" in request.prompt.lower() or "xauusd" in request.prompt.lower():
+        market_feed = fetch_live_market_data(request.prompt)
+        if market_feed:
+            enhanced_prompt += market_feed
+
     if GROQ_API_KEY:
         try:
             headers = {
@@ -52,7 +83,7 @@ def generate_ai(request: ChatRequest):
                 "model": "llama-3.1-8b-instant",
                 "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": request.prompt}
+                    {"role": "user", "content": enhanced_prompt}
                 ],
                 "temperature": 0.7
             }
