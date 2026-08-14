@@ -2,15 +2,23 @@ import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import requests
+from supabase import create_client, Client
 
-app = FastAPI(title="Ultimate AI Core - Multi-Persona", version="2.0")
+app = FastAPI(title="Ultimate AI Core - Memory & Personas", version="2.1")
+
+# Initialize Supabase connection
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class PromptRequest(BaseModel):
     prompt: str
-    persona: str = "general"  # Options: general, engineering, trading, coding
+    persona: str = "general"
     model: str = "openai/gpt-oss-20b:free"
 
-# Define different expert system prompts
 PERSONAS = {
     "general": "You are the core intelligence of an advanced, multi-system AI.",
     "engineering": "You are an expert Civil Engineering assistant specializing in mechanics, structures, material science, and numerical methods.",
@@ -22,8 +30,8 @@ PERSONAS = {
 def home():
     return {
         "status": "Online", 
-        "version": "2.0 Multi-Persona Active",
-        "available_personas": list(PERSONAS.keys())
+        "version": "2.1 Memory Enabled",
+        "database_connected": bool(supabase)
     }
 
 @app.post("/generate")
@@ -39,7 +47,6 @@ def generate_text(request: PromptRequest):
         "X-Title": "Ultimate AI System"
     }
     
-    # Select the system prompt based on the chosen persona
     system_prompt = PERSONAS.get(request.persona, PERSONAS["general"])
     
     payload = {
@@ -58,11 +65,34 @@ def generate_text(request: PromptRequest):
             raise HTTPException(status_code=response.status_code, detail=response_data)
             
         ai_reply = response_data["choices"][0]["message"]["content"]
+        
+        # Save interaction to Supabase if database is configured
+        if supabase:
+            try:
+                supabase.table("chat_history").insert({
+                    "persona": request.persona,
+                    "user_prompt": request.prompt,
+                    "ai_response": ai_reply
+                }).execute()
+            except Exception as db_err:
+                print(f"Database save warning: {db_err}")
+
         return {
             "persona_used": request.persona,
             "model_used": request.model,
-            "response": ai_reply
+            "response": ai_reply,
+            "saved_to_memory": bool(supabase)
         }
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/history")
+def get_history():
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured.")
+    try:
+        response = supabase.table("chat_history").select("*").order("created_at", desc=True).limit(10).execute()
+        return {"recent_history": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
