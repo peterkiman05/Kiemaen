@@ -18,6 +18,8 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e:
         print(f"Supabase init warning: {e}")
 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
 # Request body model
 class ChatRequest(BaseModel):
     prompt: str
@@ -40,9 +42,32 @@ def home():
 @app.post("/generate")
 def generate_ai(request: ChatRequest):
     system_prompt = PERSONAS.get(request.persona, PERSONAS["general"])
-    
-    # Example AI generation logic (replace with your active LLM API integration if applicable)
-    ai_response = f"[{request.persona.upper()} AI]: Received your message: '{request.prompt}'. Core systems operational."
+    ai_response = "AI service unavailable."
+
+    if GROQ_API_KEY:
+        try:
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": "llama3-70b-8192",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": request.prompt}
+                ],
+                "temperature": 0.7
+            }
+            response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
+            if response.status_code == 200:
+                data = response.json()
+                ai_response = data["choices"][0]["message"]["content"]
+            else:
+                ai_response = f"API Error: {response.text}"
+        except Exception as e:
+            ai_response = f"Connection error: {str(e)}"
+    else:
+        ai_response = "GROQ_API_KEY is not configured on the server."
 
     # Save to Supabase if connected
     if supabase:
