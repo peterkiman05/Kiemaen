@@ -1,98 +1,68 @@
-import os
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
+import os
 import requests
 from supabase import create_client, Client
 
-app = FastAPI(title="Ultimate AI Core - Memory & Personas", version="2.1")
+app = FastAPI(title="Ultimate AI Core")
 
-# Initialize Supabase connection
+# Initialize Supabase connection safely
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"Supabase init warning: {e}")
 
-class PromptRequest(BaseModel):
+# Request body model
+class ChatRequest(BaseModel):
     prompt: str
     persona: str = "general"
-    model: str = "openai/gpt-oss-20b:free"
 
+# Persona system prompts dictionary
 PERSONAS = {
-    "general": "You are the core intelligence of an advanced, multi-system AI.",
-    "engineering": "You are an expert Civil Engineering assistant specializing in mechanics, structures, material science, and numerical methods.",
-    "trading": "You are an expert financial trading and proprietary risk-management strategist familiar with MetaTrader, market structures, and price action.",
-    "coding": "You are an elite software developer and debugging expert proficient in Python, TypeScript, and cloud deployment pipelines."
+    "general": "You are a helpful, versatile personal AI collaborator.",
+    "engineering": "You are an expert civil engineering assistant specializing in structural analysis, mechanics of materials, and design standards.",
+    "trading": "You are a professional financial trading mentor specializing in proprietary trading challenges, risk management, and technical analysis.",
+    "coding": "You are an expert software developer proficient in Python, TypeScript, and modern web application deployment."
 }
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def home():
-    return {
-        "status": "Online", 
-        "version": "2.1 Memory Enabled",
-        "database_connected": bool(supabase)
-    }
+    if os.path.exists("index.html"):
+        return FileResponse("index.html")
+    return "<h3>Ultimate AI Core is Online, but index.html was not found.</h3>"
 
 @app.post("/generate")
-def generate_text(request: PromptRequest):
-    api_key = os.getenv("AI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="Configuration Error: AI_API_KEY is missing.")
-    
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": "https://github.com/peterkiman05/Kiemaen",
-        "X-Title": "Ultimate AI System"
-    }
-    
+def generate_ai(request: ChatRequest):
     system_prompt = PERSONAS.get(request.persona, PERSONAS["general"])
     
-    payload = {
-        "model": request.model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": request.prompt}
-        ]
-    }
+    # Example AI generation logic (replace with your active LLM API integration if applicable)
+    ai_response = f"[{request.persona.upper()} AI]: Received your message: '{request.prompt}'. Core systems operational."
 
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        response_data = response.json()
-        
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=response_data)
-            
-        ai_reply = response_data["choices"][0]["message"]["content"]
-        
-        # Save interaction to Supabase if database is configured
-        if supabase:
-            try:
-                supabase.table("chat_history").insert({
-                    "persona": request.persona,
-                    "user_prompt": request.prompt,
-                    "ai_response": ai_reply
-                }).execute()
-            except Exception as db_err:
-                print(f"Database save warning: {db_err}")
+    # Save to Supabase if connected
+    if supabase:
+        try:
+            supabase.table("chat_history").insert({
+                "persona": request.persona,
+                "user_prompt": request.prompt,
+                "ai_response": ai_response
+            }).execute()
+        except Exception as db_error:
+            print(f"Database logging error: {db_error}")
 
-        return {
-            "persona_used": request.persona,
-            "model_used": request.model,
-            "response": ai_reply,
-            "saved_to_memory": bool(supabase)
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {"response": ai_response}
 
 @app.get("/history")
 def get_history():
     if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase not configured.")
+        raise HTTPException(status_code=500, detail="Database not configured.")
     try:
-        response = supabase.table("chat_history").select("*").order("created_at", desc=True).limit(10).execute()
-        return {"recent_history": response.data}
+        response = supabase.table("chat_history").select("*").order("created_at", desc=True).limit(20).execute()
+        return {"history": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
