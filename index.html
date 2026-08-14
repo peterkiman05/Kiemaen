@@ -13,7 +13,10 @@
     <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col hidden md:flex">
         <div class="p-4 border-b border-gray-700 font-bold text-blue-400 flex justify-between items-center">
             <span>Chat History</span>
-            <button onclick="loadHistory()" class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-gray-300">Refresh</button>
+            <div class="flex gap-1">
+                <button onclick="loadHistory()" class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-gray-300" title="Refresh">🔄</button>
+                <button onclick="clearHistory()" class="text-xs bg-red-900/60 hover:bg-red-800 px-2 py-1 rounded text-red-200" title="Clear History">🗑️</button>
+            </div>
         </div>
         <div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-2 text-xs text-gray-300">
             <div class="p-2 text-gray-500 italic">Loading history...</div>
@@ -108,6 +111,26 @@
                 }
             } catch (err) {
                 historyList.innerHTML = '<div class="p-2 text-red-400 italic">Failed to load history.</div>';
+            }
+        }
+
+        async function clearHistory() {
+            if (!confirm("Are you sure you want to clear all chat history?")) return;
+            try {
+                const res = await fetch('/history/clear', { method: 'DELETE' });
+                if (res.ok) {
+                    loadHistory();
+                    container.innerHTML = `
+                        <div class="flex justify-start">
+                            <div class="bg-gray-800 p-3 rounded-lg max-w-xl text-sm border border-gray-700">
+                                History cleared. System ready for new inputs.
+                            </div>
+                        </div>`;
+                } else {
+                    alert("Failed to clear history.");
+                }
+            } catch (err) {
+                alert("Connection error while clearing history.");
             }
         }
 
