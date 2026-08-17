@@ -15,7 +15,7 @@
             background-color: #0b0f19;
         }
         .safe-bottom-bar {
-            bottom: env(safe-area-inset-bottom, 0px);
+            padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
         }
         ::-webkit-scrollbar {
             width: 5px;
@@ -50,14 +50,14 @@
         }
         textarea {
             resize: none;
-            min-height: 40px;
-            max-height: 140px;
+            min-height: 42px;
+            max-height: 130px;
         }
     </style>
 </head>
 <body class="text-gray-100 flex flex-col md:flex-row">
 
-    <!-- Sidebar History -->
+    <!-- Sidebar History (Desktop) -->
     <aside class="w-72 bg-gray-900 border-r border-gray-800 hidden md:flex flex-col h-full shadow-xl">
         <div class="p-4 border-b border-gray-800 font-bold text-indigo-400 flex justify-between items-center bg-gray-950/40">
             <span class="tracking-wide text-sm uppercase">Neural Logs</span>
@@ -89,30 +89,38 @@
         </header>
 
         <!-- Message Feed -->
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl w-full mx-auto pb-36 md:pb-28">
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl w-full mx-auto pb-32 md:pb-28">
             <div class="flex justify-start">
                 <div class="bg-gray-800/80 backdrop-blur border border-gray-700/60 p-3.5 rounded-xl max-w-[90%] md:max-w-2xl text-sm leading-relaxed shadow-lg">
-                    <span class="font-bold text-indigo-400">Kiemaen Core:</span> Multi-file context and chat history memory active. Ready for workflow queries.
+                    <span class="font-bold text-indigo-400">Kiemaen Core:</span> Mobile layout optimized. Input bar locked to the bottom with inline file picker symbol.
                 </div>
             </div>
         </div>
 
-        <!-- Input Bar -->
-        <div class="fixed left-0 right-0 bg-gray-950/90 backdrop-blur-md border-t border-gray-800 p-2.5 md:p-4 z-20 shadow-2xl safe-bottom-bar">
+        <!-- Input Bar (Pinned securely to the bottom edge) -->
+        <div class="absolute bottom-0 left-0 right-0 bg-gray-950/95 backdrop-blur-md border-t border-gray-800 p-2.5 md:p-4 z-20 shadow-2xl safe-bottom-bar">
             <form id="chat-form" class="max-w-4xl mx-auto flex flex-col gap-1.5">
                 <div class="flex gap-2 items-end">
-                    <textarea id="prompt-input" rows="1" placeholder="Type prompt or multi-line questions..." 
-                        class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-gray-100 placeholder-gray-500 shadow-inner leading-relaxed"></textarea>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-indigo-600/20 h-[42px]">
+                    
+                    <!-- Textarea & Attachment Button Group -->
+                    <div class="flex-1 bg-gray-900 border border-gray-700 rounded-xl flex items-center px-3 py-1.5 focus-within:border-indigo-500 shadow-inner">
+                        <textarea id="prompt-input" rows="1" placeholder="Type a message..." 
+                            class="flex-1 bg-transparent border-none focus:outline-none text-sm text-gray-100 placeholder-gray-500 leading-relaxed py-1"></textarea>
+                        
+                        <!-- File Symbol next to text bar -->
+                        <label class="cursor-pointer text-gray-400 hover:text-indigo-400 transition p-1.5 ml-1 flex items-center justify-center" title="Attach files">
+                            <span class="text-base">📎</span>
+                            <input type="file" id="file-input" class="hidden" multiple accept=".py,.txt,.md,.json,.csv,.js,.ts">
+                        </label>
+                    </div>
+
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 md:px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-indigo-600/20 h-[46px] flex items-center justify-center">
                         Send
                     </button>
                 </div>
-                <div class="flex items-center justify-between text-[11px] text-gray-400 px-1">
-                    <label class="cursor-pointer flex items-center gap-1.5 hover:text-indigo-400 transition py-0.5">
-                        <span>📎 Attach Multiple Files</span>
-                        <input type="file" id="file-input" class="hidden" multiple accept=".py,.txt,.md,.json,.csv,.js,.ts">
-                    </label>
-                    <span id="file-name" class="italic text-gray-500 truncate max-w-[200px]">No attachments</span>
+                <div class="flex justify-between items-center text-[11px] text-gray-400 px-1">
+                    <span id="file-name" class="italic text-gray-500 truncate max-w-[250px]">No attachments</span>
+                    <span>Shift + Enter for new line</span>
                 </div>
             </form>
         </div>
