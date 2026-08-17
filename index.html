@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kiemaen AI</title>
+    <title>Kiemaen AI — Ultimate Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
@@ -12,68 +12,103 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            background-color: #0b0f19;
         }
-        /* Dynamically shifts up when mobile control/gesture bars are active */
         .safe-bottom-bar {
             bottom: env(safe-area-inset-bottom, 0px);
         }
+        /* Custom scrollbars for professional finish */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        pre {
+            background-color: #1e1e2e !important;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        th, td {
+            border: 1px solid #374151;
+            padding: 6px 10px;
+            text-align: left;
+            font-size: 13px;
+        }
+        th {
+            background-color: #1f2937;
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 flex flex-col md:flex-row">
+<body class="text-gray-100 flex flex-col md:flex-row">
 
-    <!-- History Sidebar -->
-    <aside class="w-64 bg-gray-800 border-r border-gray-700 hidden md:flex flex-col h-full">
-        <div class="p-4 border-b border-gray-700 font-bold text-blue-400 flex justify-between items-center">
-            <span>Chat History</span>
-            <div class="flex gap-1">
-                <button onclick="loadHistory()" class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-gray-300" title="Refresh">🔄</button>
-                <button onclick="clearHistory()" class="text-xs bg-red-900/60 hover:bg-red-800 px-2 py-1 rounded text-red-200" title="Clear History">🗑️</button>
+    <!-- Sidebar History (Desktop) -->
+    <aside class="w-72 bg-gray-900 border-r border-gray-800 hidden md:flex flex-col h-full shadow-xl">
+        <div class="p-4 border-b border-gray-800 font-bold text-indigo-400 flex justify-between items-center bg-gray-950/40">
+            <span class="tracking-wide text-sm uppercase">Neural Logs</span>
+            <div class="flex gap-1.5">
+                <button onclick="loadHistory()" class="text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded text-gray-300 transition" title="Refresh">🔄</button>
+                <button onclick="clearHistory()" class="text-xs bg-red-950/80 hover:bg-red-900 px-2 py-1 rounded text-red-300 transition" title="Wipe History">🗑️</button>
             </div>
         </div>
-        <div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-2 text-xs text-gray-300">
-            <div class="p-2 text-gray-500 italic">Loading history...</div>
+        <div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-1.5 text-xs text-gray-300">
+            <div class="p-2 text-gray-500 italic">Synchronizing logs...</div>
         </div>
     </aside>
 
-    <!-- Main Chat Area -->
+    <!-- Main Central Panel -->
     <div class="flex-1 flex flex-col h-full relative">
         
-        <!-- Header & Persona Selector -->
-        <header class="bg-gray-800 p-3 md:p-4 border-b border-gray-700 flex justify-between items-center shadow-md z-10">
-            <h1 class="text-lg md:text-xl font-bold text-blue-400">Kiemaen AI</h1>
-            <select id="persona" class="bg-gray-700 text-xs md:text-sm p-2 rounded border border-gray-600 focus:outline-none text-white">
-                <option value="general">General AI</option>
-                <option value="engineering">Civil Engineering</option>
-                <option value="trading">Financial Trading</option>
-                <option value="coding">Software Coding</option>
+        <!-- Header -->
+        <header class="bg-gray-950/80 backdrop-blur-md p-3 md:p-4 border-b border-gray-800 flex justify-between items-center shadow-lg z-10">
+            <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <h1 class="text-base md:text-lg font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">KIEMAEN AI</h1>
+            </div>
+            <select id="persona" class="bg-gray-900 text-xs md:text-sm py-1.5 px-3 rounded-lg border border-gray-700 focus:outline-none focus:border-indigo-500 text-indigo-200 font-medium shadow-inner">
+                <option value="general">⚡ General Intelligence</option>
+                <option value="engineering">📐 Civil Engineering</option>
+                <option value="trading">📈 Financial Trading</option>
+                <option value="coding">💻 Software Architecture</option>
             </select>
         </header>
 
-        <!-- Chat Messages Box (Extra bottom padding ensures last message stays visible above the input bar) -->
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto pb-28 md:pb-24">
+        <!-- Message Feed -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl w-full mx-auto pb-32 md:pb-28">
             <div class="flex justify-start">
-                <div class="bg-gray-800 p-3 rounded-lg max-w-[85%] md:max-w-xl text-sm border border-gray-700">
-                    Kiemaen AI online. Type a prompt or attach a file below!
+                <div class="bg-gray-800/80 backdrop-blur border border-gray-700/60 p-3.5 rounded-xl max-w-[90%] md:max-w-2xl text-sm leading-relaxed shadow-lg">
+                    <span class="font-bold text-indigo-400">Kiemaen Core:</span> Online and calibrated for multi-domain execution. Select your target persona above or stream commands below.
                 </div>
             </div>
         </div>
 
-        <!-- Fixed Bottom Input Form (Tucked tightly to bottom, moving dynamically with mobile controls via safe area) -->
-        <div class="fixed left-0 right-0 bg-gray-800/95 backdrop-blur border-t border-gray-700 p-2.5 md:p-3 z-20 shadow-lg safe-bottom-bar">
-            <form id="chat-form" class="max-w-3xl mx-auto flex flex-col gap-1.5">
+        <!-- Input Bar (Pinned securely to viewport base, scaling cleanly above phone software or button margins) -->
+        <div class="fixed left-0 right-0 bg-gray-950/90 backdrop-blur-md border-t border-gray-800 p-2.5 md:p-4 z-20 shadow-2xl safe-bottom-bar">
+            <form id="chat-form" class="max-w-4xl mx-auto flex flex-col gap-1.5">
                 <div class="flex gap-2">
-                    <input type="text" id="prompt-input" placeholder="Message Kiemaen AI..." autocomplete="off"
-                        class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+                    <input type="text" id="prompt-input" placeholder="Execute prompt or upload asset context..." autocomplete="off"
+                        class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-gray-100 placeholder-gray-500 shadow-inner">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-indigo-600/20">
                         Send
                     </button>
                 </div>
                 <div class="flex items-center justify-between text-[11px] text-gray-400 px-1">
-                    <label class="cursor-pointer flex items-center gap-1 hover:text-blue-400">
-                        <span>📎 Attach File</span>
+                    <label class="cursor-pointer flex items-center gap-1.5 hover:text-indigo-400 transition py-0.5">
+                        <span>📎 Attach Source Code / Text</span>
                         <input type="file" id="file-input" class="hidden" accept=".py,.txt,.md,.json,.csv,.js,.ts">
                     </label>
-                    <span id="file-name" class="italic text-gray-500 truncate max-w-[180px]">No file attached</span>
+                    <span id="file-name" class="italic text-gray-500 truncate max-w-[180px]">No attachment</span>
                 </div>
             </form>
         </div>
@@ -96,12 +131,10 @@
             if (file) {
                 fileNameDisplay.textContent = file.name;
                 const reader = new FileReader();
-                reader.onload = function(event) {
-                    attachedFileContent = event.target.result;
-                };
+                reader.onload = (ev) => { attachedFileContent = ev.target.result; };
                 reader.readAsText(file);
             } else {
-                fileNameDisplay.textContent = "No file attached";
+                fileNameDisplay.textContent = "No attachment";
                 attachedFileContent = "";
             }
         });
@@ -115,35 +148,35 @@
                     historyList.innerHTML = '';
                     data.history.forEach(item => {
                         const div = document.createElement('div');
-                        div.className = "p-2 bg-gray-700/50 rounded border border-gray-700 hover:bg-gray-700 cursor-pointer";
+                        div.className = "p-2 bg-gray-900/60 rounded-lg border border-gray-800 hover:border-gray-700 cursor-pointer transition";
                         div.innerHTML = `
-                            <div class="font-semibold text-blue-300 uppercase text-[10px]">${item.persona}</div>
-                            <div class="truncate text-gray-200">${escapeHtml(item.user_prompt)}</div>`;
+                            <div class="font-bold text-indigo-400 uppercase text-[9px] tracking-wider">${item.persona}</div>
+                            <div class="truncate text-gray-300 mt-0.5">${escapeHtml(item.user_prompt)}</div>`;
                         historyList.appendChild(div);
                     });
                 } else {
-                    historyList.innerHTML = '<div class="p-2 text-gray-500 italic">No history found.</div>';
+                    historyList.innerHTML = '<div class="p-2 text-gray-600 italic">No persistent logs.</div>';
                 }
             } catch (err) {
-                historyList.innerHTML = '<div class="p-2 text-red-400 italic">Failed to load history.</div>';
+                historyList.innerHTML = '<div class="p-2 text-red-400 italic">Sync failure.</div>';
             }
         }
 
         async function clearHistory() {
-            if (!confirm("Clear all chat history?")) return;
+            if (!confirm("Wipe neural database logs?")) return;
             try {
                 const res = await fetch('/history/clear', { method: 'DELETE' });
                 if (res.ok) {
                     loadHistory();
                     container.innerHTML = `
                         <div class="flex justify-start">
-                            <div class="bg-gray-800 p-3 rounded-lg max-w-xl text-sm border border-gray-700">
-                                History cleared. Kiemaen AI ready.
+                            <div class="bg-gray-800/80 border border-gray-700 p-3.5 rounded-xl text-sm text-gray-200">
+                                Memory matrix wiped. Kiemaen AI reset.
                             </div>
                         </div>`;
                 }
             } catch (err) {
-                alert("Connection error.");
+                alert("Connection disruption.");
             }
         }
 
@@ -160,27 +193,29 @@
                 text = `${text}\n\n[Attached File Context]:\n\`\`\`\n${attachedFileContent}\n\`\`\``;
             }
 
+            // User Chat Bubble
             const userMsgDiv = document.createElement('div');
             userMsgDiv.className = "flex justify-end";
             userMsgDiv.innerHTML = `
-                <div class="bg-blue-600 text-white p-3 rounded-lg max-w-[85%] md:max-w-xl text-sm whitespace-pre-wrap">
+                <div class="bg-indigo-600 text-white p-3.5 rounded-2xl rounded-br-none max-w-[85%] md:max-w-xl text-sm whitespace-pre-wrap shadow-md">
                     ${escapeHtml(input.value.trim())} ${fileInput.files[0] ? `📎 (${fileInput.files[0].name})` : ''}
                 </div>`;
             container.appendChild(userMsgDiv);
             
             input.value = '';
             fileInput.value = '';
-            fileNameDisplay.textContent = "No file attached";
-            const currentFileContentToSend = text;
+            fileNameDisplay.textContent = "No attachment";
+            const payloadText = text;
             attachedFileContent = "";
 
             container.scrollTop = container.scrollHeight;
 
+            // Loading state
             const loadingDiv = document.createElement('div');
             loadingDiv.className = "flex justify-start";
             loadingDiv.innerHTML = `
-                <div class="bg-gray-800 text-gray-400 p-3 rounded-lg text-sm border border-gray-700 animate-pulse">
-                    Thinking...
+                <div class="bg-gray-800/80 text-indigo-300 p-3.5 rounded-2xl text-sm border border-gray-700/60 animate-pulse flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></div> Processing engine active...
                 </div>`;
             container.appendChild(loadingDiv);
             container.scrollTop = container.scrollHeight;
@@ -189,35 +224,31 @@
                 const response = await fetch('/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: currentFileContentToSend, persona: persona })
+                    body: JSON.stringify({ prompt: payloadText, persona: persona })
                 });
                 const data = await response.json();
                 
-                if (container.contains(loadingDiv)) {
-                    container.removeChild(loadingDiv);
-                }
+                if (container.contains(loadingDiv)) container.removeChild(loadingDiv);
 
-                const aiReply = data.response || data.detail || "Error generating response.";
+                const aiReply = data.response || data.detail || "System processing error.";
                 const parsedMarkdown = marked.parse(aiReply);
 
                 const aiMsgDiv = document.createElement('div');
                 aiMsgDiv.className = "flex justify-start";
                 aiMsgDiv.innerHTML = `
-                    <div class="bg-gray-800 p-4 rounded-lg max-w-[90%] md:max-w-2xl text-sm border border-gray-700 space-y-2 leading-relaxed overflow-x-auto">
+                    <div class="bg-gray-800/90 backdrop-blur border border-gray-700/70 p-4 rounded-2xl rounded-bl-none max-w-[92%] md:max-w-3xl text-sm leading-relaxed shadow-xl space-y-2 overflow-x-auto text-gray-200">
                         ${parsedMarkdown}
                     </div>`;
                 container.appendChild(aiMsgDiv);
                 
                 loadHistory();
             } catch (err) {
-                if (container.contains(loadingDiv)) {
-                    container.removeChild(loadingDiv);
-                }
+                if (container.contains(loadingDiv)) container.removeChild(loadingDiv);
                 const errorDiv = document.createElement('div');
                 errorDiv.className = "flex justify-start";
                 errorDiv.innerHTML = `
-                    <div class="bg-red-900 text-red-200 p-3 rounded-lg text-sm border border-red-700">
-                        Connection error with Kiemaen AI backend.
+                    <div class="bg-red-950/80 text-red-200 border border-red-800 p-3.5 rounded-xl text-sm">
+                        Critical Link Failure: Unable to reach Kiemaen Core.
                     </div>`;
                 container.appendChild(errorDiv);
             }
