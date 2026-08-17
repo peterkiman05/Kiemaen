@@ -40,10 +40,10 @@ def fetch_live_market_data(prompt: str) -> str:
         if "gold" in prompt_lower or "xauusd" in prompt_lower:
             ticker = yf.Ticker("GC=F")
             todays_data = ticker.history(period="1d")
-            current_price = 4395.00  # Fallback baseline anchor
+            current_price = 4395.00
             if not todays_data.empty:
                 current_price = todays_data['Close'].iloc[-1]
-            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Gold (XAUUSD / GC=F) live trading price is currently anchored at ${current_price:.2f} USD. All technical evaluations must scale around this exact price bracket."
+            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Gold (XAUUSD / GC=F) live trading price is currently anchored at ${current_price:.2f} USD."
         elif "btc" in prompt_lower or "bitcoin" in prompt_lower:
             ticker = yf.Ticker("BTC-USD")
             todays_data = ticker.history(period="1d")
@@ -53,8 +53,6 @@ def fetch_live_market_data(prompt: str) -> str:
             live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Bitcoin (BTC-USD) live trading price is currently anchored at ${current_price:.2f} USD."
     except Exception as e:
         print(f"Market fetch warning: {e}")
-        if "gold" in prompt_lower or "xauusd" in prompt_lower:
-            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Gold (XAUUSD) live market price is $4,395.00 USD."
 
     return live_context
 
@@ -82,7 +80,7 @@ def generate_ai(request: ChatRequest):
                 "Content-Type": "application/json"
             }
             payload = {
-                "model": "llama-3.3-70b-versatile",  # High intelligence & reasoning model tier
+                "model": "llama-3.3-70b-versatile",  # Correct verified endpoint string
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": enhanced_prompt}
