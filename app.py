@@ -8,7 +8,6 @@ from supabase import create_client, Client
 
 app = FastAPI(title="Kiemaen AI - Ultimate Intelligence Core")
 
-# Initialize Supabase connection safely
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
@@ -35,7 +34,6 @@ PERSONAS = {
 def fetch_live_market_data(prompt: str) -> str:
     prompt_lower = prompt.lower()
     live_context = ""
-    
     try:
         if "gold" in prompt_lower or "xauusd" in prompt_lower:
             ticker = yf.Ticker("GC=F")
@@ -53,7 +51,6 @@ def fetch_live_market_data(prompt: str) -> str:
             live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Bitcoin (BTC-USD) live trading price is currently anchored at ${current_price:.2f} USD."
     except Exception as e:
         print(f"Market fetch warning: {e}")
-
     return live_context
 
 @app.get("/", response_class=HTMLResponse)
@@ -73,6 +70,20 @@ def generate_ai(request: ChatRequest):
         if market_feed:
             enhanced_prompt += market_feed
 
+    # Pull prior message context from Supabase if available for conversational continuity
+    recent_messages = [{"role": "system", "content": system_prompt}]
+    if supabase:
+        try:
+            history_res = supabase.table("chat_history").select("user_prompt, ai_response").order("created_at", desc=False).limit(6).execute()
+            if history_res.data:
+                for row in history_res.data:
+                    recent_messages.append({"role": "user", "content": row["user_prompt"]})
+                    recent_messages.append({"role": "assistant", "content": row["ai_response"]})
+        except Exception as ex:
+            print(f"History context fetch error: {ex}")
+    
+    recent_messages.append({"role": "user", "content": enhanced_prompt})
+
     if GROQ_API_KEY:
         try:
             headers = {
@@ -80,11 +91,8 @@ def generate_ai(request: ChatRequest):
                 "Content-Type": "application/json"
             }
             payload = {
-                "model": "llama-3.3-70b-versatile",  # Correct verified endpoint string
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": enhanced_prompt}
-                ],
+                "model": "openai/gpt-oss-120b",  # Updated active production model endpoint
+                "messages": recent_messages,
                 "temperature": 0.5
             }
             response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
