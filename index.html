@@ -1,131 +1,280 @@
-import os
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse
-from pydantic import BaseModel
-import requests
-import yfinance as yf
-from supabase import create_client, Client
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Kiemaen AI — Ultimate Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0b0f19;
+        }
+        .safe-bottom-bar {
+            bottom: env(safe-area-inset-bottom, 0px);
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        pre {
+            background-color: #1e1e2e !important;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        th, td {
+            border: 1px solid #374151;
+            padding: 6px 10px;
+            text-align: left;
+            font-size: 13px;
+        }
+        th {
+            background-color: #1f2937;
+        }
+        textarea {
+            resize: none;
+            min-height: 40px;
+            max-height: 140px;
+        }
+    </style>
+</head>
+<body class="text-gray-100 flex flex-col md:flex-row">
 
-app = FastAPI(title="Kiemaen AI - Ultimate Intelligence Core")
+    <!-- Sidebar History -->
+    <aside class="w-72 bg-gray-900 border-r border-gray-800 hidden md:flex flex-col h-full shadow-xl">
+        <div class="p-4 border-b border-gray-800 font-bold text-indigo-400 flex justify-between items-center bg-gray-950/40">
+            <span class="tracking-wide text-sm uppercase">Neural Logs</span>
+            <div class="flex gap-1.5">
+                <button onclick="loadHistory()" class="text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded text-gray-300 transition" title="Refresh">🔄</button>
+                <button onclick="clearHistory()" class="text-xs bg-red-950/80 hover:bg-red-900 px-2 py-1 rounded text-red-300 transition" title="Wipe History">🗑️</button>
+            </div>
+        </div>
+        <div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-1.5 text-xs text-gray-300">
+            <div class="p-2 text-gray-500 italic">Synchronizing logs...</div>
+        </div>
+    </aside>
 
-# Initialize Supabase connection safely
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+    <!-- Main Panel -->
+    <div class="flex-1 flex flex-col h-full relative">
+        
+        <!-- Header -->
+        <header class="bg-gray-950/80 backdrop-blur-md p-3 md:p-4 border-b border-gray-800 flex justify-between items-center shadow-lg z-10">
+            <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <h1 class="text-base md:text-lg font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">KIEMAEN AI</h1>
+            </div>
+            <select id="persona" class="bg-gray-900 text-xs md:text-sm py-1.5 px-3 rounded-lg border border-gray-700 focus:outline-none focus:border-indigo-500 text-indigo-200 font-medium shadow-inner">
+                <option value="general">⚡ General Intelligence</option>
+                <option value="engineering">📐 Civil Engineering</option>
+                <option value="trading">📈 Financial Trading</option>
+                <option value="coding">💻 Software Architecture</option>
+            </select>
+        </header>
 
-supabase: Client = None
-if SUPABASE_URL and SUPABASE_KEY:
-    try:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    except Exception as e:
-        print(f"Supabase init warning: {e}")
+        <!-- Message Feed -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl w-full mx-auto pb-36 md:pb-28">
+            <div class="flex justify-start">
+                <div class="bg-gray-800/80 backdrop-blur border border-gray-700/60 p-3.5 rounded-xl max-w-[90%] md:max-w-2xl text-sm leading-relaxed shadow-lg">
+                    <span class="font-bold text-indigo-400">Kiemaen Core:</span> Multi-file context and chat history memory active. Ready for workflow queries.
+                </div>
+            </div>
+        </div>
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+        <!-- Input Bar -->
+        <div class="fixed left-0 right-0 bg-gray-950/90 backdrop-blur-md border-t border-gray-800 p-2.5 md:p-4 z-20 shadow-2xl safe-bottom-bar">
+            <form id="chat-form" class="max-w-4xl mx-auto flex flex-col gap-1.5">
+                <div class="flex gap-2 items-end">
+                    <textarea id="prompt-input" rows="1" placeholder="Type prompt or multi-line questions..." 
+                        class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-gray-100 placeholder-gray-500 shadow-inner leading-relaxed"></textarea>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-indigo-600/20 h-[42px]">
+                        Send
+                    </button>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-gray-400 px-1">
+                    <label class="cursor-pointer flex items-center gap-1.5 hover:text-indigo-400 transition py-0.5">
+                        <span>📎 Attach Multiple Files</span>
+                        <input type="file" id="file-input" class="hidden" multiple accept=".py,.txt,.md,.json,.csv,.js,.ts">
+                    </label>
+                    <span id="file-name" class="italic text-gray-500 truncate max-w-[200px]">No attachments</span>
+                </div>
+            </form>
+        </div>
 
-class ChatRequest(BaseModel):
-    prompt: str
-    persona: str = "general"
+    </div>
 
-PERSONAS = {
-    "general": "You are Kiemaen AI, an elite, highly competent, and versatile personal AI collaborator engineered for maximum precision, efficiency, and speed.",
-    "engineering": "You are Kiemaen AI acting as a senior civil engineering consultant specializing in structural analysis, mechanics of materials, and design eurocodes/standards. Always structure complex calculations, parameters, formulas, and results using clean Markdown tables.",
-    "trading": "You are Kiemaen AI acting as a master institutional trading mentor specializing in proprietary risk parameters, automated execution plans, and technical analysis. CRITICAL RULE: When live market feed context is injected (such as Gold/XAUUSD live rates), you MUST construct all support, resistance, entry, stop-loss, and take-profit targets strictly around those exact real-time live prices. Format all risk metrics (Risk-to-Reward, Lot Size, Max Drawdown) inside pristine markdown data tables.",
-    "coding": "You are Kiemaen AI acting as a Principal Software Engineer proficient in Python, TypeScript, and cloud containerization architecture. Always provide modular, bug-free, production-ready code blocks accompanied by precise execution details."
-}
+    <script>
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('prompt-input');
+        const container = document.getElementById('chat-container');
+        const personaSelect = document.getElementById('persona');
+        const historyList = document.getElementById('history-list');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name');
 
-def fetch_live_market_data(prompt: str) -> str:
-    prompt_lower = prompt.lower()
-    live_context = ""
-    
-    try:
-        if "gold" in prompt_lower or "xauusd" in prompt_lower:
-            ticker = yf.Ticker("GC=F")
-            todays_data = ticker.history(period="1d")
-            current_price = 4395.00
-            if not todays_data.empty:
-                current_price = todays_data['Close'].iloc[-1]
-            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Gold (XAUUSD / GC=F) live trading price is currently anchored at ${current_price:.2f} USD."
-        elif "btc" in prompt_lower or "bitcoin" in prompt_lower:
-            ticker = yf.Ticker("BTC-USD")
-            todays_data = ticker.history(period="1d")
-            current_price = 65000.00
-            if not todays_data.empty:
-                current_price = todays_data['Close'].iloc[-1]
-            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Bitcoin (BTC-USD) live trading price is currently anchored at ${current_price:.2f} USD."
-    except Exception as e:
-        print(f"Market fetch warning: {e}")
+        let accumulatedFilesContent = "";
 
-    return live_context
+        input.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
 
-@app.get("/", response_class=HTMLResponse)
-def home():
-    if os.path.exists("index.html"):
-        return FileResponse("index.html")
-    return "<h3>Kiemaen AI Core Online (index.html missing)</h3>"
-
-@app.post("/generate")
-def generate_ai(request: ChatRequest):
-    system_prompt = PERSONAS.get(request.persona, PERSONAS["general"])
-    ai_response = "AI processing service offline."
-
-    enhanced_prompt = request.prompt
-    if request.persona == "trading" or "gold" in request.prompt.lower() or "xauusd" in request.prompt.lower():
-        market_feed = fetch_live_market_data(request.prompt)
-        if market_feed:
-            enhanced_prompt += market_feed
-
-    if GROQ_API_KEY:
-        try:
-            headers = {
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json"
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit', { cancelable: true }));
             }
-            payload = {
-                "model": "llama-3.3-70b-versatile",  # Correct verified endpoint string
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": enhanced_prompt}
-                ],
-                "temperature": 0.5
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                fileNameDisplay.textContent = `${files.length} file(s) attached`;
+                accumulatedFilesContent = "";
+                for (let file of files) {
+                    const text = await file.text();
+                    accumulatedFilesContent += `\n\n--- [File: ${file.name}] ---\n\`\`\`\n${text}\n\`\`\``;
+                }
+            } else {
+                fileNameDisplay.textContent = "No attachments";
+                accumulatedFilesContent = "";
             }
-            response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
-            if response.status_code == 200:
-                data = response.json()
-                ai_response = data["choices"][0]["message"]["content"]
-            else:
-                ai_response = f"API Error ({response.status_code}): {response.text}"
-        except Exception as e:
-            ai_response = f"Network routing error: {str(e)}"
-    else:
-        ai_response = "Error: GROQ_API_KEY is missing from environment configurations."
+        });
 
-    if supabase:
-        try:
-            supabase.table("chat_history").insert({
-                "persona": request.persona,
-                "user_prompt": request.prompt,
-                "ai_response": ai_response
-            }).execute()
-        except Exception as db_error:
-            print(f"Database sync warning: {db_error}")
+        async function loadHistory() {
+            if (!historyList) return;
+            try {
+                const res = await fetch('/history');
+                const data = await res.json();
+                if (data.history && data.history.length > 0) {
+                    historyList.innerHTML = '';
+                    data.history.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = "p-2 bg-gray-900/60 rounded-lg border border-gray-800 hover:border-gray-700 cursor-pointer transition";
+                        div.innerHTML = `
+                            <div class="font-bold text-indigo-400 uppercase text-[9px] tracking-wider">${item.persona}</div>
+                            <div class="truncate text-gray-300 mt-0.5">${escapeHtml(item.user_prompt)}</div>`;
+                        historyList.appendChild(div);
+                    });
+                } else {
+                    historyList.innerHTML = '<div class="p-2 text-gray-600 italic">No persistent logs.</div>';
+                }
+            } catch (err) {
+                historyList.innerHTML = '<div class="p-2 text-red-400 italic">Sync failure.</div>';
+            }
+        }
 
-    return {"response": ai_response}
+        async function clearHistory() {
+            if (!confirm("Wipe neural database logs?")) return;
+            try {
+                const res = await fetch('/history/clear', { method: 'DELETE' });
+                if (res.ok) {
+                    loadHistory();
+                    container.innerHTML = `
+                        <div class="flex justify-start">
+                            <div class="bg-gray-800/80 border border-gray-700 p-3.5 rounded-xl text-sm text-gray-200">
+                                Memory matrix wiped. Kiemaen AI reset.
+                            </div>
+                        </div>`;
+                }
+            } catch (err) {
+                alert("Connection disruption.");
+            }
+        }
 
-@app.get("/history")
-def get_history():
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Database uninitialized.")
-    try:
-        response = supabase.table("chat_history").select("*").order("created_at", desc=True).limit(20).execute()
-        return {"history": response.data}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        loadHistory();
 
-@app.delete("/history/clear")
-def clear_history():
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Database uninitialized.")
-    try:
-        supabase.table("chat_history").delete().neq("id", 0).execute()
-        return {"status": "success", "message": "History wiped cleanly."}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let text = input.value.trim();
+            const persona = personaSelect.value;
+            
+            if (!text && !accumulatedFilesContent) return;
+
+            if (accumulatedFilesContent) {
+                text = `${text}\n\n[Attached Multi-File Context]:${accumulatedFilesContent}`;
+            }
+
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = "flex justify-end";
+            userMsgDiv.innerHTML = `
+                <div class="bg-indigo-600 text-white p-3.5 rounded-2xl rounded-br-none max-w-[85%] md:max-w-xl text-sm whitespace-pre-wrap shadow-md">
+                    ${escapeHtml(input.value.trim())} ${fileInput.files.length > 0 ? `📎 (${fileInput.files.length} files)` : ''}
+                </div>`;
+            container.appendChild(userMsgDiv);
+            
+            input.value = '';
+            input.style.height = 'auto';
+            fileInput.value = '';
+            fileNameDisplay.textContent = "No attachments";
+            const payloadText = text;
+            accumulatedFilesContent = "";
+
+            container.scrollTop = container.scrollHeight;
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = "flex justify-start";
+            loadingDiv.innerHTML = `
+                <div class="bg-gray-800/80 text-indigo-300 p-3.5 rounded-2xl text-sm border border-gray-700/60 animate-pulse flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></div> Processing engine active...
+                </div>`;
+            container.appendChild(loadingDiv);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: payloadText, persona: persona })
+                });
+                const data = await response.json();
+                
+                if (container.contains(loadingDiv)) container.removeChild(loadingDiv);
+
+                const aiReply = data.response || data.detail || "System processing error.";
+                const parsedMarkdown = marked.parse(aiReply);
+
+                const aiMsgDiv = document.createElement('div');
+                aiMsgDiv.className = "flex justify-start";
+                aiMsgDiv.innerHTML = `
+                    <div class="bg-gray-800/90 backdrop-blur border border-gray-700/70 p-4 rounded-2xl rounded-bl-none max-w-[92%] md:max-w-3xl text-sm leading-relaxed shadow-xl space-y-2 overflow-x-auto text-gray-200">
+                        ${parsedMarkdown}
+                    </div>`;
+                container.appendChild(aiMsgDiv);
+                
+                loadHistory();
+            } catch (err) {
+                if (container.contains(loadingDiv)) container.removeChild(loadingDiv);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = "flex justify-start";
+                errorDiv.innerHTML = `
+                    <div class="bg-red-950/80 text-red-200 border border-red-800 p-3.5 rounded-xl text-sm">
+                        Critical Link Failure: Unable to reach Kiemaen Core.
+                    </div>`;
+                container.appendChild(errorDiv);
+            }
+            container.scrollTop = container.scrollHeight;
+        });
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+</html>
