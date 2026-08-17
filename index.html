@@ -124,12 +124,12 @@
         <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl w-full mx-auto pb-32 md:pb-28">
             <div class="flex justify-start">
                 <div class="bg-gray-800/80 backdrop-blur border border-gray-700/60 p-3.5 rounded-xl max-w-[90%] md:max-w-2xl text-sm leading-relaxed shadow-lg">
-                    <span class="font-bold text-indigo-400">Kiemaen Core:</span> Voice dictation mode enabled. Tap the microphone icon to dictate questions hands-free.
+                    <span class="font-bold text-indigo-400">Kiemaen Core:</span> Text-to-speech engine ready. Click "🔊 Listen" on any AI response to hear it read aloud.
                 </div>
             </div>
         </div>
 
-        <!-- Input Bar -->
+        <!-- Input Bar (Pinned securely to the bottom edge) -->
         <div class="absolute bottom-0 left-0 right-0 bg-gray-950/95 backdrop-blur-md border-t border-gray-800 p-2.5 md:p-4 z-20 shadow-2xl safe-bottom-bar">
             <form id="chat-form" class="max-w-4xl mx-auto flex flex-col gap-1.5">
                 <div class="flex gap-2 items-end">
@@ -178,7 +178,7 @@
         let recognition = null;
         let isRecording = false;
 
-        // Setup Speech Recognition API if supported by browser
+        // Setup Speech Recognition API
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
@@ -203,13 +203,8 @@
                 }
             };
 
-            recognition.onerror = () => {
-                stopRecordingState();
-            };
-
-            recognition.onend = () => {
-                stopRecordingState();
-            };
+            recognition.onerror = () => stopRecordingState();
+            recognition.onend = () => stopRecordingState();
         }
 
         function stopRecordingState() {
@@ -237,6 +232,47 @@
                 }
             }
         });
+
+        // Speech Synthesis Function (Text-To-Speech)
+        function toggleSpeakText(rawText, btnElement) {
+            if (!('speechSynthesis' in window)) {
+                alert("Text-to-speech is not supported in this browser.");
+                return;
+            }
+
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                btnElement.textContent = "🔊 Listen";
+                btnElement.classList.remove("bg-red-900/50", "text-red-300");
+                return;
+            }
+
+            // Strip code blocks and markdown formatting for cleaner speech output
+            const plainText = rawText
+                .replace(/```[\s\S]*?```/g, "Code snippet omitted.")
+                .replace(/`([^`]+)`/g, "$1")
+                .replace(/[*_#>]/g, "");
+
+            const utterance = new SpeechSynthesisUtterance(plainText);
+            utterance.lang = 'en-US';
+
+            utterance.onstart = () => {
+                btnElement.textContent = "⏹️ Stop";
+                btnElement.classList.add("bg-red-900/50", "text-red-300");
+            };
+
+            utterance.onend = () => {
+                btnElement.textContent = "🔊 Listen";
+                btnElement.classList.remove("bg-red-900/50", "text-red-300");
+            };
+
+            utterance.onerror = () => {
+                btnElement.textContent = "🔊 Listen";
+                btnElement.classList.remove("bg-red-900/50", "text-red-300");
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
 
         input.addEventListener('input', function() {
             this.style.height = 'auto';
@@ -365,13 +401,21 @@
                 parsedMarkdown = wrapCodeBlocksWithCopyButton(parsedMarkdown);
 
                 const aiMsgDiv = document.createElement('div');
-                aiMsgDiv.className = "flex justify-start";
+                aiMsgDiv.className = "flex justify-start flex-col gap-1 items-start";
+                
                 aiMsgDiv.innerHTML = `
                     <div class="bg-gray-800/90 backdrop-blur border border-gray-700/70 p-4 rounded-2xl rounded-bl-none max-w-[92%] md:max-w-3xl text-sm leading-relaxed shadow-xl space-y-2 overflow-x-auto text-gray-200">
                         ${parsedMarkdown}
-                    </div>`;
+                    </div>
+                    <button class="speak-btn text-[11px] bg-gray-900/80 hover:bg-gray-800 text-indigo-300 border border-gray-700/80 px-2.5 py-1 rounded-lg transition ml-1 flex items-center gap-1">
+                        🔊 Listen
+                    </button>`;
+
+                // Attach click listener for Read-Aloud
+                const speakBtn = aiMsgDiv.querySelector('.speak-btn');
+                speakBtn.addEventListener('click', () => toggleSpeakText(aiReply, speakBtn));
+
                 container.appendChild(aiMsgDiv);
-                
                 loadHistory();
             } catch (err) {
                 if (container.contains(loadingDiv)) container.removeChild(loadingDiv);
