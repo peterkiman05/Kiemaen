@@ -6,7 +6,7 @@ import requests
 import yfinance as yf
 from supabase import create_client, Client
 
-app = FastAPI(title="Kiemaen AI - Live Market Integration")
+app = FastAPI(title="Kiemaen AI - Ultimate Intelligence Core")
 
 # Initialize Supabase connection safely
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -26,56 +26,49 @@ class ChatRequest(BaseModel):
     persona: str = "general"
 
 PERSONAS = {
-    "general": "You are Kiemaen AI, a helpful, versatile personal AI collaborator.",
-    "engineering": "You are Kiemaen AI acting as an expert civil engineering assistant specializing in structural analysis, mechanics of materials, and design standards. When performing calculations or design checks, always structure your output clearly using markdown tables for parameters, formulas, and results.",
-    "trading": "You are Kiemaen AI acting as a professional financial trading mentor specializing in proprietary trading challenges, risk management, and technical analysis. CRITICAL RULE: Whenever live market data is provided in the prompt context (e.g., Gold/XAUUSD trading around current levels like $4,350+), you MUST build all technical analysis, support/resistance levels, entry prices, stop losses, and take profits strictly around those current real-world live prices. Never revert to outdated 2024 price levels (like $1,800 or $1,900). When evaluating trades, structure risk metrics (Risk-to-Reward, Lot Size, Max Drawdown) in clean data tables.",
-    "coding": "You are Kiemaen AI acting as an expert software developer proficient in Python, TypeScript, and modern web application deployment. Always provide clean, production-ready code blocks with brief execution notes."
+    "general": "You are Kiemaen AI, an elite, highly competent, and versatile personal AI collaborator engineered for maximum precision, efficiency, and speed.",
+    "engineering": "You are Kiemaen AI acting as a senior civil engineering consultant specializing in structural analysis, mechanics of materials, and design eurocodes/standards. Always structure complex calculations, parameters, formulas, and results using clean Markdown tables.",
+    "trading": "You are Kiemaen AI acting as a master institutional trading mentor specializing in proprietary risk parameters, automated execution plans, and technical analysis. CRITICAL RULE: When live market feed context is injected (such as Gold/XAUUSD live rates), you MUST construct all support, resistance, entry, stop-loss, and take-profit targets strictly around those exact real-time live prices. Format all risk metrics (Risk-to-Reward, Lot Size, Max Drawdown) inside pristine markdown data tables.",
+    "coding": "You are Kiemaen AI acting as a Principal Software Engineer proficient in Python, TypeScript, and cloud containerization architecture. Always provide modular, bug-free, production-ready code blocks accompanied by precise execution details."
 }
 
 def fetch_live_market_data(prompt: str) -> str:
-    """Detects if the user is asking about gold/XAUUSD or crypto and fetches live data with fallback protection."""
     prompt_lower = prompt.lower()
     live_context = ""
     
     try:
         if "gold" in prompt_lower or "xauusd" in prompt_lower:
-            ticker = yf.Ticker("GC=F") # Gold Futures ticker
+            ticker = yf.Ticker("GC=F")
             todays_data = ticker.history(period="1d")
-            current_price = 4395.00 # Safe baseline fallback
+            current_price = 4395.00  # Fallback baseline anchor
             if not todays_data.empty:
                 current_price = todays_data['Close'].iloc[-1]
-            
-            live_context = f"\n\n[MANDATORY SYSTEM OVERRIDE - Live Market Feed]: The current real-time live price for Gold (XAUUSD / GC=F) is approximately ${current_price:.2f} USD. You must base all analysis, entries, targets, and stop losses around this live price bracket."
-            
+            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Gold (XAUUSD / GC=F) live trading price is currently anchored at ${current_price:.2f} USD. All technical evaluations must scale around this exact price bracket."
         elif "btc" in prompt_lower or "bitcoin" in prompt_lower:
             ticker = yf.Ticker("BTC-USD")
             todays_data = ticker.history(period="1d")
-            current_price = 65000.00 # Safe baseline fallback
+            current_price = 65000.00
             if not todays_data.empty:
                 current_price = todays_data['Close'].iloc[-1]
-                
-            live_context = f"\n\n[MANDATORY SYSTEM OVERRIDE - Live Market Feed]: The current live price for Bitcoin is approximately ${current_price:.2f} USD."
-            
+            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Bitcoin (BTC-USD) live trading price is currently anchored at ${current_price:.2f} USD."
     except Exception as e:
-        print(f"Market fetch error: {e}")
-        # Graceful fallback so it never defaults back to 2024 historical lows if yfinance blocks the request
+        print(f"Market fetch warning: {e}")
         if "gold" in prompt_lower or "xauusd" in prompt_lower:
-            live_context = f"\n\n[MANDATORY SYSTEM OVERRIDE - Live Market Feed]: The current live market price for Gold (XAUUSD) is $4,395.00 USD. Do not use 1900 or 2000 pricing."
-        
+            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Gold (XAUUSD) live market price is $4,395.00 USD."
+
     return live_context
 
 @app.get("/", response_class=HTMLResponse)
 def home():
     if os.path.exists("index.html"):
         return FileResponse("index.html")
-    return "<h3>Kiemaen AI is Online, but index.html was not found.</h3>"
+    return "<h3>Kiemaen AI Core Online (index.html missing)</h3>"
 
 @app.post("/generate")
 def generate_ai(request: ChatRequest):
     system_prompt = PERSONAS.get(request.persona, PERSONAS["general"])
-    ai_response = "AI service unavailable."
+    ai_response = "AI processing service offline."
 
-    # Append live market data if the trading persona or relevant keywords are used
     enhanced_prompt = request.prompt
     if request.persona == "trading" or "gold" in request.prompt.lower() or "xauusd" in request.prompt.lower():
         market_feed = fetch_live_market_data(request.prompt)
@@ -89,12 +82,12 @@ def generate_ai(request: ChatRequest):
                 "Content-Type": "application/json"
             }
             payload = {
-                "model": "openai/gpt-oss-20b", # Updated active model ID
+                "model": "llama-3.3-70b-versatile",  # High intelligence & reasoning model tier
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": enhanced_prompt}
                 ],
-                "temperature": 0.7
+                "temperature": 0.5
             }
             response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
             if response.status_code == 200:
@@ -103,11 +96,10 @@ def generate_ai(request: ChatRequest):
             else:
                 ai_response = f"API Error ({response.status_code}): {response.text}"
         except Exception as e:
-            ai_response = f"Connection error: {str(e)}"
+            ai_response = f"Network routing error: {str(e)}"
     else:
-        ai_response = "GROQ_API_KEY is not configured on the server."
+        ai_response = "Error: GROQ_API_KEY is missing from environment configurations."
 
-    # Save to Supabase if connected
     if supabase:
         try:
             supabase.table("chat_history").insert({
@@ -116,14 +108,14 @@ def generate_ai(request: ChatRequest):
                 "ai_response": ai_response
             }).execute()
         except Exception as db_error:
-            print(f"Database logging error: {db_error}")
+            print(f"Database sync warning: {db_error}")
 
     return {"response": ai_response}
 
 @app.get("/history")
 def get_history():
     if not supabase:
-        raise HTTPException(status_code=500, detail="Database not configured.")
+        raise HTTPException(status_code=500, detail="Database uninitialized.")
     try:
         response = supabase.table("chat_history").select("*").order("created_at", desc=True).limit(20).execute()
         return {"history": response.data}
@@ -133,9 +125,9 @@ def get_history():
 @app.delete("/history/clear")
 def clear_history():
     if not supabase:
-        raise HTTPException(status_code=500, detail="Database not configured.")
+        raise HTTPException(status_code=500, detail="Database uninitialized.")
     try:
-        response = supabase.table("chat_history").delete().neq("id", 0).execute()
-        return {"status": "success", "message": "Chat history cleared successfully."}
+        supabase.table("chat_history").delete().neq("id", 0).execute()
+        return {"status": "success", "message": "History wiped cleanly."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
