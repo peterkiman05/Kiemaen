@@ -1,461 +1,108 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kiemaen AI — Ultimate Intelligence Core</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civil Engineering AI Assistant</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        body {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0b0f19;
-        }
-        .safe-bottom-bar {
-            padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
-        }
-        ::-webkit-scrollbar {
-            width: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #111827;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 4px;
-        }
-        .code-container {
-            position: relative;
-            margin-top: 8px;
-            margin-bottom: 8px;
-        }
-        pre {
-            background-color: #1e1e2e !important;
-            padding: 14px 12px 12px 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            border: 1px solid #374151;
-        }
-        .copy-btn {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            background: #374151;
-            color: #d1d5db;
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-            z-index: 10;
-        }
-        .copy-btn:hover {
-            background: #4f46e5;
-            color: #ffffff;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 8px;
-            margin-bottom: 8px;
-        }
-        th, td {
-            border: 1px solid #374151;
-            padding: 6px 10px;
-            text-align: left;
-            font-size: 13px;
-        }
-        th {
-            background-color: #1f2937;
-        }
-        textarea {
-            resize: none;
-            min-height: 42px;
-            max-height: 130px;
-        }
-        @keyframes pulse-red {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.1); }
-        }
-        .recording-active {
-            color: #ef4444 !important;
-            animation: pulse-red 1.5s infinite;
-        }
-    </style>
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+    <!-- KaTeX Core JS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+    <!-- KaTeX Auto-Render Extension -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+        onload="renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+            ]
+        });"></script>
 </head>
-<body class="text-gray-100 flex flex-col md:flex-row">
-
-    <!-- Sidebar History (Desktop) -->
-    <aside class="w-72 bg-gray-900 border-r border-gray-800 hidden md:flex flex-col h-full shadow-xl">
-        <div class="p-4 border-b border-gray-800 font-bold text-indigo-400 flex justify-between items-center bg-gray-950/40">
-            <span class="tracking-wide text-sm uppercase">Neural Logs</span>
-            <div class="flex gap-1.5">
-                <button onclick="loadHistory()" class="text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded text-gray-300 transition" title="Refresh">🔄</button>
-                <button onclick="clearHistory()" class="text-xs bg-red-950/80 hover:bg-red-900 px-2 py-1 rounded text-red-300 transition" title="Wipe History">🗑️</button>
-            </div>
-        </div>
-        <div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-1.5 text-xs text-gray-300">
-            <div class="p-2 text-gray-500 italic">Synchronizing logs...</div>
-        </div>
-    </aside>
-
-    <!-- Main Panel -->
-    <div class="flex-1 flex flex-col h-full relative">
-        
-        <!-- Header -->
-        <header class="bg-gray-950/80 backdrop-blur-md p-3 md:p-4 border-b border-gray-800 flex justify-between items-center shadow-lg z-10">
-            <div class="flex items-center gap-2">
-                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                <h1 class="text-base md:text-lg font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">KIEMAEN AI</h1>
-            </div>
-            <select id="persona" class="bg-gray-900 text-xs md:text-sm py-1.5 px-3 rounded-lg border border-gray-700 focus:outline-none focus:border-indigo-500 text-indigo-200 font-medium shadow-inner">
-                <option value="general">⚡ General Intelligence</option>
-                <option value="engineering">📐 Civil Engineering</option>
-                <option value="trading">📈 Financial Trading</option>
-                <option value="coding">💻 Software Architecture</option>
-            </select>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center p-4">
+    <div class="w-full max-w-3xl bg-slate-800 rounded-lg shadow-xl p-6 flex flex-col h-[90vh]">
+        <header class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+            <h1 class="text-xl font-bold">Civil Engineering AI Assistant</h1>
+            <span class="text-xs bg-blue-600/30 text-blue-400 px-2 py-1 rounded border border-blue-500/30">KaTeX & PDF Enabled</span>
         </header>
-
-        <!-- Message Feed -->
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl w-full mx-auto pb-32 md:pb-28">
-            <div class="flex justify-start">
-                <div class="bg-gray-800/80 backdrop-blur border border-gray-700/60 p-3.5 rounded-xl max-w-[90%] md:max-w-2xl text-sm leading-relaxed shadow-lg">
-                    <span class="font-bold text-indigo-400">Kiemaen Core:</span> Text-to-speech engine ready. Click "🔊 Listen" on any AI response to hear it read aloud.
+        
+        <div id="chat-container" class="flex-1 overflow-y-auto space-y-4 pr-2 mb-4">
+            <!-- Initial greeting showcasing KaTeX formula rendering -->
+            <div class="text-left">
+                <div class="inline-block bg-slate-700 text-slate-100 rounded p-3 text-sm max-w-[85%]">
+                    Welcome! Ready to assist with your structural analysis, beam deflections, or strength of materials formulas like $\sigma = \frac{M y}{I}$.
                 </div>
             </div>
         </div>
 
-        <!-- Input Bar (Pinned securely to the bottom edge) -->
-        <div class="absolute bottom-0 left-0 right-0 bg-gray-950/95 backdrop-blur-md border-t border-gray-800 p-2.5 md:p-4 z-20 shadow-2xl safe-bottom-bar">
-            <form id="chat-form" class="max-w-4xl mx-auto flex flex-col gap-1.5">
-                <div class="flex gap-2 items-end">
-                    
-                    <!-- Textarea & Action Symbols Group -->
-                    <div class="flex-1 bg-gray-900 border border-gray-700 rounded-xl flex items-center px-3 py-1.5 focus-within:border-indigo-500 shadow-inner">
-                        <textarea id="prompt-input" rows="1" placeholder="Type a message or use mic..." 
-                            class="flex-1 bg-transparent border-none focus:outline-none text-sm text-gray-100 placeholder-gray-500 leading-relaxed py-1"></textarea>
-                        
-                        <!-- Voice Dictation Button -->
-                        <button type="button" id="mic-btn" class="text-gray-400 hover:text-indigo-400 transition p-1.5 flex items-center justify-center text-base" title="Voice Dictation">
-                            🎤
-                        </button>
-
-                        <!-- File Attachment Button -->
-                        <label class="cursor-pointer text-gray-400 hover:text-indigo-400 transition p-1.5 ml-0.5 flex items-center justify-center" title="Attach file">
-                            <span class="text-base">📎</span>
-                            <input type="file" id="file-input" class="hidden" accept=".pdf,.py,.txt,.md,.json,.csv,.js,.ts">
-                        </label>
-                    </div>
-
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 md:px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-indigo-600/20 h-[46px] flex items-center justify-center">
-                        Send
-                    </button>
+        <form id="chat-form" class="space-y-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+            <div class="flex gap-2">
+                <select id="persona" class="flex-1 bg-slate-700 border border-slate-600 rounded p-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="general">General Civil Engineering</option>
+                    <option value="structures">Structural Analysis (Beams & Trusses)</option>
+                    <option value="materials">Strength of Materials</option>
+                </select>
+            </div>
+            
+            <textarea id="prompt-input" rows="2" placeholder="Ask a question or enter structural formulas (e.g., $\int \frac{M}{EI} dx$)..." class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-sm focus:outline-none focus:border-blue-500"></textarea>
+            
+            <div class="flex justify-between items-center pt-1">
+                <div class="flex items-center space-x-2">
+                    <input type="file" id="file-input" accept=".pdf" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
                 </div>
-                <div class="flex justify-between items-center text-[11px] text-gray-400 px-1">
-                    <span id="file-name" class="italic text-gray-500 truncate max-w-[250px]">No attachment</span>
-                    <span>Shift + Enter for new line</span>
-                </div>
-            </form>
-        </div>
-
+                <button type="submit" class="bg-blue-600 hover:bg-blue-500 px-5 py-2 rounded text-sm font-semibold transition-colors shadow-md">Send Prompt</button>
+            </div>
+        </form>
     </div>
 
     <script>
-        const form = document.getElementById('chat-form');
-        const input = document.getElementById('prompt-input');
-        const container = document.getElementById('chat-container');
-        const personaSelect = document.getElementById('persona');
-        const historyList = document.getElementById('history-list');
-        const fileInput = document.getElementById('file-input');
-        const fileNameDisplay = document.getElementById('file-name');
-        const micBtn = document.getElementById('mic-btn');
-
-        let recognition = null;
-        let isRecording = false;
-
-        // Setup Speech Recognition API
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
-
-            recognition.onresult = (e) => {
-                let final = '';
-                for (let i = e.resultIndex; i < e.results.length; ++i) {
-                    if (e.results[i].isFinal) {
-                        final += e.results[i][0].transcript;
-                    }
-                }
-                if (final) {
-                    input.value += (input.value ? ' ' : '') + final;
-                    input.style.height = 'auto';
-                    input.style.height = (input.scrollHeight) + 'px';
-                }
-            };
-
-            recognition.onerror = () => stopRecordingState();
-            recognition.onend = () => stopRecordingState();
+        function triggerMathRender() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ]
+            });
         }
 
-        function stopRecordingState() {
-            isRecording = false;
-            micBtn.classList.remove('recording-active');
-            micBtn.title = "Voice Dictation";
-        }
-
-        micBtn.addEventListener('click', () => {
-            if (!recognition) {
-                alert("Speech recognition is not supported in this browser.");
-                return;
-            }
-            if (isRecording) {
-                recognition.stop();
-                stopRecordingState();
-            } else {
-                try {
-                    recognition.start();
-                    isRecording = true;
-                    micBtn.classList.add('recording-active');
-                    micBtn.title = "Listening... Click to stop";
-                } catch (err) {
-                    stopRecordingState();
-                }
-            }
-        });
-
-        // Speech Synthesis Function (Text-To-Speech)
-        function toggleSpeakText(rawText, btnElement) {
-            if (!('speechSynthesis' in window)) {
-                alert("Text-to-speech is not supported in this browser.");
-                return;
-            }
-
-            if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.cancel();
-                btnElement.textContent = "🔊 Listen";
-                btnElement.classList.remove("bg-red-900/50", "text-red-300");
-                return;
-            }
-
-            const plainText = rawText
-                .replace(/```[\s\S]*?```/g, "Code snippet omitted.")
-                .replace(/`([^`]+)`/g, "$1")
-                .replace(/[*_#>]/g, "");
-
-            const utterance = new SpeechSynthesisUtterance(plainText);
-            utterance.lang = 'en-US';
-
-            utterance.onstart = () => {
-                btnElement.textContent = "⏹️ Stop";
-                btnElement.classList.add("bg-red-900/50", "text-red-300");
-            };
-
-            utterance.onend = () => {
-                btnElement.textContent = "🔊 Listen";
-                btnElement.classList.remove("bg-red-900/50", "text-red-300");
-            };
-
-            utterance.onerror = () => {
-                btnElement.textContent = "🔊 Listen";
-                btnElement.classList.remove("bg-red-900/50", "text-red-300");
-            };
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        input.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
-        });
-
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                form.dispatchEvent(new Event('submit', { cancelable: true }));
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                fileNameDisplay.textContent = file.name;
-            } else {
-                fileNameDisplay.textContent = "No attachment";
-            }
-        });
-
-        async function loadHistory() {
-            if (!historyList) return;
-            try {
-                const res = await fetch('/history');
-                const data = await res.json();
-                if (data.history && data.history.length > 0) {
-                    historyList.innerHTML = '';
-                    data.history.forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = "p-2 bg-gray-900/60 rounded-lg border border-gray-800 hover:border-gray-700 cursor-pointer transition";
-                        div.innerHTML = `
-                            <div class="font-bold text-indigo-400 uppercase text-[9px] tracking-wider">${item.persona}</div>
-                            <div class="truncate text-gray-300 mt-0.5">${escapeHtml(item.user_prompt)}</div>`;
-                        historyList.appendChild(div);
-                    });
-                } else {
-                    historyList.innerHTML = '<div class="p-2 text-gray-600 italic">No persistent logs.</div>';
-                }
-            } catch (err) {
-                historyList.innerHTML = '<div class="p-2 text-red-400 italic">Sync failure.</div>';
-            }
-        }
-
-        async function clearHistory() {
-            if (!confirm("Wipe neural database logs?")) return;
-            try {
-                const res = await fetch('/history/clear', { method: 'DELETE' });
-                if (res.ok) {
-                    loadHistory();
-                    container.innerHTML = `
-                        <div class="flex justify-start">
-                            <div class="bg-gray-800/80 border border-gray-700 p-3.5 rounded-xl text-sm text-gray-200">
-                                Memory matrix wiped. Kiemaen AI reset.
-                            </div>
-                        </div>`;
-                }
-            } catch (err) {
-                alert("Connection disruption.");
-            }
-        }
-
-        loadHistory();
-
-        form.addEventListener('submit', async (e) => {
+        document.getElementById('chat-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (isRecording && recognition) {
-                recognition.stop();
-                stopRecordingState();
-            }
+            const prompt = document.getElementById('prompt-input').value;
+            const persona = document.getElementById('persona').value;
+            const fileInput = document.getElementById('file-input').files[0];
+            const chatContainer = document.getElementById('chat-container');
 
-            const text = input.value.trim();
-            const persona = personaSelect.value;
-            const attachedFile = fileInput.files[0];
-            
-            if (!text && !attachedFile) return;
+            if (!prompt.trim()) return;
 
-            const userMsgDiv = document.createElement('div');
-            userMsgDiv.className = "flex justify-end";
-            userMsgDiv.innerHTML = `
-                <div class="bg-indigo-600 text-white p-3.5 rounded-2xl rounded-br-none max-w-[85%] md:max-w-xl text-sm whitespace-pre-wrap shadow-md">
-                    ${escapeHtml(text)} ${attachedFile ? `📎 (${attachedFile.name})` : ''}
-                </div>`;
-            container.appendChild(userMsgDiv);
-            
-            input.value = '';
-            input.style.height = 'auto';
+            // Append User Message
+            chatContainer.innerHTML += `<div class="text-right"><div class="inline-block bg-blue-600 text-white rounded p-3 text-sm max-w-[85%] text-left">${prompt}</div></div>`;
+            document.getElementById('prompt-input').value = '';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
             const formData = new FormData();
-            formData.append("prompt", text || "Please analyze this attached document.");
-            formData.append("persona", persona);
-            if (attachedFile) {
-                formData.append("file", attachedFile);
-            }
-
-            fileInput.value = '';
-            fileNameDisplay.textContent = "No attachment";
-
-            container.scrollTop = container.scrollHeight;
-
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = "flex justify-start";
-            loadingDiv.innerHTML = `
-                <div class="bg-gray-800/80 text-indigo-300 p-3.5 rounded-2xl text-sm border border-gray-700/60 animate-pulse flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></div> Processing engine active...
-                </div>`;
-            container.appendChild(loadingDiv);
-            container.scrollTop = container.scrollHeight;
+            formData.append('prompt', prompt);
+            formData.append('persona', persona);
+            if (fileInput) formData.append('file', fileInput);
 
             try {
-                const response = await fetch('/generate', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('/api/generate', { method: 'POST', body: formData });
                 const data = await response.json();
                 
-                if (container.contains(loadingDiv)) container.removeChild(loadingDiv);
-
-                const aiReply = data.response || data.detail || "System processing error.";
-                let parsedMarkdown = marked.parse(aiReply);
-                parsedMarkdown = wrapCodeBlocksWithCopyButton(parsedMarkdown);
-
-                const aiMsgDiv = document.createElement('div');
-                aiMsgDiv.className = "flex justify-start flex-col gap-1 items-start";
+                // Append AI Response
+                chatContainer.innerHTML += `<div class="text-left"><div class="inline-block bg-slate-700 text-slate-100 rounded p-3 text-sm max-w-[85%]">${data.response}</div></div>`;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
                 
-                aiMsgDiv.innerHTML = `
-                    <div class="bg-gray-800/90 backdrop-blur border border-gray-700/70 p-4 rounded-2xl rounded-bl-none max-w-[92%] md:max-w-3xl text-sm leading-relaxed shadow-xl space-y-2 overflow-x-auto text-gray-200">
-                        ${parsedMarkdown}
-                    </div>
-                    <button class="speak-btn text-[11px] bg-gray-900/80 hover:bg-gray-800 text-indigo-300 border border-gray-700/80 px-2.5 py-1 rounded-lg transition ml-1 flex items-center gap-1">
-                        🔊 Listen
-                    </button>`;
-
-                const speakBtn = aiMsgDiv.querySelector('.speak-btn');
-                speakBtn.addEventListener('click', () => toggleSpeakText(aiReply, speakBtn));
-
-                container.appendChild(aiMsgDiv);
-                loadHistory();
+                // Trigger KaTeX rendering pass on newly injected content
+                triggerMathRender();
             } catch (err) {
-                if (container.contains(loadingDiv)) container.removeChild(loadingDiv);
-                const errorDiv = document.createElement('div');
-                errorDiv.className = "flex justify-start";
-                errorDiv.innerHTML = `
-                    <div class="bg-red-950/80 text-red-200 border border-red-800 p-3.5 rounded-xl text-sm">
-                        Critical Link Failure: Unable to reach Kiemaen Core.
-                    </div>`;
-                container.appendChild(errorDiv);
+                console.error("Transmission error:", err);
+                chatContainer.innerHTML += `<div class="text-left"><div class="inline-block bg-red-600/30 text-red-300 rounded p-3 text-sm max-w-[85%]">Error communicating with backend server.</div></div>`;
             }
-            container.scrollTop = container.scrollHeight;
         });
-
-        function wrapCodeBlocksWithCopyButton(htmlContent) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = htmlContent;
-            const preElements = tempDiv.querySelectorAll('pre');
-
-            preElements.forEach((pre) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'code-container';
-
-                const button = document.createElement('button');
-                button.className = 'copy-btn';
-                button.textContent = 'Copy';
-                
-                button.onclick = () => {
-                    const codeText = pre.innerText;
-                    navigator.clipboard.writeText(codeText).then(() => {
-                        button.textContent = 'Copied!';
-                        button.style.background = '#059669';
-                        setTimeout(() => {
-                            button.textContent = 'Copy';
-                            button.style.background = '#374151';
-                        }, 2000);
-                    });
-                };
-
-                pre.parentNode.insertBefore(wrapper, pre);
-                wrapper.appendChild(pre);
-                wrapper.appendChild(button);
-            });
-
-            return tempDiv.innerHTML;
-        }
-
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
     </script>
 </body>
 </html>
- 
