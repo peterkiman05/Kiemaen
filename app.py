@@ -1,10 +1,12 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 import requests
 import yfinance as yf
 from supabase import create_client, Client
+import pypdf
+import io
 
 app = FastAPI(title="Kiemaen AI - Ultimate Intelligence Core")
 
@@ -60,17 +62,37 @@ def home():
     return "<h3>Kiemaen AI Core Online (index.html missing)</h3>"
 
 @app.post("/generate")
-def generate_ai(request: ChatRequest):
-    system_prompt = PERSONAS.get(request.persona, PERSONAS["general"])
+async def generate_ai(prompt: str = Form(...), persona: str = Form("general"), file: UploadFile = File(None)):
+    system_prompt = PERSONAS.get(persona, PERSONAS["general"])
     ai_response = "AI processing service offline."
 
-    enhanced_prompt = request.prompt
-    if request.persona == "trading" or "gold" in request.prompt.lower() or "xauusd" in request.prompt.lower():
-        market_feed = fetch_live_market_data(request.prompt)
+    enhanced_prompt = prompt
+
+    # Handle PDF or text file extraction if attached
+    if file:
+        file_bytes = await file.read()
+        extracted_text = ""
+        filename = file.filename.lower()
+        try:
+            if filename.endswith(".pdf"):
+                reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+                for page in reader.pages:
+                    text_page = page.extract_text()
+                    if text_page:
+                        extracted_text += text_page + "\n"
+            else:
+                extracted_text = file_bytes.decode("utf-8", errors="ignore")
+            
+            if extracted_text.strip():
+                enhanced_prompt += f"\n\n--- [Attached Document: {file.filename}] ---\n{extracted_text}"
+        except Exception as file_err:
+            print(f"File parsing error: {file_err}")
+
+    if persona == "trading" or "gold" in prompt.lower() or "xauusd" in prompt.lower():
+        market_feed = fetch_live_market_data(prompt)
         if market_feed:
             enhanced_prompt += market_feed
 
-    # Pull prior message context from Supabase if available for conversational continuity
     recent_messages = [{"role": "system", "content": system_prompt}]
     if supabase:
         try:
@@ -91,7 +113,7 @@ def generate_ai(request: ChatRequest):
                 "Content-Type": "application/json"
             }
             payload = {
-                "model": "openai/gpt-oss-120b",  # Updated active production model endpoint
+                "model": "llama-3.3-70b-versatile",  # Optimized active production model endpoint
                 "messages": recent_messages,
                 "temperature": 0.5
             }
@@ -109,8 +131,8 @@ def generate_ai(request: ChatRequest):
     if supabase:
         try:
             supabase.table("chat_history").insert({
-                "persona": request.persona,
-                "user_prompt": request.prompt,
+                "persona": persona,
+                "user_prompt": prompt,
                 "ai_response": ai_response
             }).execute()
         except Exception as db_error:
