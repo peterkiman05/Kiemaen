@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kiemaen AI — Ultimate Intelligence</title>
+    <title>Kiemaen AI — Ultimate Intelligence Core</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
@@ -145,9 +145,9 @@
                         </button>
 
                         <!-- File Attachment Button -->
-                        <label class="cursor-pointer text-gray-400 hover:text-indigo-400 transition p-1.5 ml-0.5 flex items-center justify-center" title="Attach files">
+                        <label class="cursor-pointer text-gray-400 hover:text-indigo-400 transition p-1.5 ml-0.5 flex items-center justify-center" title="Attach file">
                             <span class="text-base">📎</span>
-                            <input type="file" id="file-input" class="hidden" multiple accept=".py,.txt,.md,.json,.csv,.js,.ts">
+                            <input type="file" id="file-input" class="hidden" accept=".pdf,.py,.txt,.md,.json,.csv,.js,.ts">
                         </label>
                     </div>
 
@@ -156,7 +156,7 @@
                     </button>
                 </div>
                 <div class="flex justify-between items-center text-[11px] text-gray-400 px-1">
-                    <span id="file-name" class="italic text-gray-500 truncate max-w-[250px]">No attachments</span>
+                    <span id="file-name" class="italic text-gray-500 truncate max-w-[250px]">No attachment</span>
                     <span>Shift + Enter for new line</span>
                 </div>
             </form>
@@ -174,7 +174,6 @@
         const fileNameDisplay = document.getElementById('file-name');
         const micBtn = document.getElementById('mic-btn');
 
-        let accumulatedFilesContent = "";
         let recognition = null;
         let isRecording = false;
 
@@ -187,13 +186,10 @@
             recognition.lang = 'en-US';
 
             recognition.onresult = (e) => {
-                let interim = '';
                 let final = '';
                 for (let i = e.resultIndex; i < e.results.length; ++i) {
                     if (e.results[i].isFinal) {
                         final += e.results[i][0].transcript;
-                    } else {
-                        interim += e.results[i][0].transcript;
                     }
                 }
                 if (final) {
@@ -247,7 +243,6 @@
                 return;
             }
 
-            // Strip code blocks and markdown formatting for cleaner speech output
             const plainText = rawText
                 .replace(/```[\s\S]*?```/g, "Code snippet omitted.")
                 .replace(/`([^`]+)`/g, "$1")
@@ -286,18 +281,12 @@
             }
         });
 
-        fileInput.addEventListener('change', async (e) => {
-            const files = e.target.files;
-            if (files && files.length > 0) {
-                fileNameDisplay.textContent = `${files.length} file(s) attached`;
-                accumulatedFilesContent = "";
-                for (let file of files) {
-                    const text = await file.text();
-                    accumulatedFilesContent += `\n\n--- [File: ${file.name}] ---\n\`\`\`\n${text}\n\`\`\``;
-                }
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
             } else {
-                fileNameDisplay.textContent = "No attachments";
-                accumulatedFilesContent = "";
+                fileNameDisplay.textContent = "No attachment";
             }
         });
 
@@ -351,29 +340,31 @@
                 stopRecordingState();
             }
 
-            let text = input.value.trim();
+            const text = input.value.trim();
             const persona = personaSelect.value;
+            const attachedFile = fileInput.files[0];
             
-            if (!text && !accumulatedFilesContent) return;
-
-            if (accumulatedFilesContent) {
-                text = `${text}\n\n[Attached Multi-File Context]:${accumulatedFilesContent}`;
-            }
+            if (!text && !attachedFile) return;
 
             const userMsgDiv = document.createElement('div');
             userMsgDiv.className = "flex justify-end";
             userMsgDiv.innerHTML = `
                 <div class="bg-indigo-600 text-white p-3.5 rounded-2xl rounded-br-none max-w-[85%] md:max-w-xl text-sm whitespace-pre-wrap shadow-md">
-                    ${escapeHtml(input.value.trim())} ${fileInput.files.length > 0 ? `📎 (${fileInput.files.length} files)` : ''}
+                    ${escapeHtml(text)} ${attachedFile ? `📎 (${attachedFile.name})` : ''}
                 </div>`;
             container.appendChild(userMsgDiv);
             
             input.value = '';
             input.style.height = 'auto';
+            const formData = new FormData();
+            formData.append("prompt", text || "Please analyze this attached document.");
+            formData.append("persona", persona);
+            if (attachedFile) {
+                formData.append("file", attachedFile);
+            }
+
             fileInput.value = '';
-            fileNameDisplay.textContent = "No attachments";
-            const payloadText = text;
-            accumulatedFilesContent = "";
+            fileNameDisplay.textContent = "No attachment";
 
             container.scrollTop = container.scrollHeight;
 
@@ -389,8 +380,7 @@
             try {
                 const response = await fetch('/generate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: payloadText, persona: persona })
+                    body: formData
                 });
                 const data = await response.json();
                 
@@ -411,7 +401,6 @@
                         🔊 Listen
                     </button>`;
 
-                // Attach click listener for Read-Aloud
                 const speakBtn = aiMsgDiv.querySelector('.speak-btn');
                 speakBtn.addEventListener('click', () => toggleSpeakText(aiReply, speakBtn));
 
@@ -469,3 +458,4 @@
     </script>
 </body>
 </html>
+ 
