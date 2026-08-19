@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kiemaen AI - Ultimate Core</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/marked/marked.min.js](https://cdn.jsdelivr.net/npm/marked/marked.min.js)"></script>
     <style>
         body {
             position: fixed;
@@ -13,7 +13,6 @@
             height: 100%;
             overflow: hidden;
         }
-        /* Custom scrollbar for clean UI */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1f2937; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
@@ -53,7 +52,7 @@
         <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto pb-36 md:pb-28">
             <div class="flex justify-start">
                 <div class="bg-gray-800 p-3 rounded-lg max-w-[85%] md:max-w-xl text-sm border border-gray-700">
-                    Kiemaen AI online. Select your persona, type a prompt, or attach a file/PDF below!
+                    Kiemaen AI Computational Core online. Ready for prompts, equations, code, or document analysis.
                 </div>
             </div>
         </div>
@@ -149,7 +148,6 @@
             
             if (!text && !file) return;
 
-            // Append User Message
             const userMsgDiv = document.createElement('div');
             userMsgDiv.className = "flex justify-end";
             userMsgDiv.innerHTML = `
@@ -164,12 +162,11 @@
 
             container.scrollTop = container.scrollHeight;
 
-            // Append Loading Indicator
             const loadingDiv = document.createElement('div');
             loadingDiv.className = "flex justify-start";
             loadingDiv.innerHTML = `
                 <div class="bg-gray-800 text-gray-400 p-3 rounded-lg text-sm border border-gray-700 animate-pulse">
-                    Thinking...
+                    Computing & Thinking...
                 </div>`;
             container.appendChild(loadingDiv);
             container.scrollTop = container.scrollHeight;
