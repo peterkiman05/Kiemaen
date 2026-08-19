@@ -29,10 +29,9 @@
         </header>
         
         <div id="chat-container" class="flex-1 overflow-y-auto space-y-4 pr-2 mb-4">
-            <!-- Initial greeting showcasing KaTeX formula rendering -->
             <div class="text-left">
                 <div class="inline-block bg-slate-700 text-slate-100 rounded p-3 text-sm max-w-[85%]">
-                    Welcome! Ready to assist with your structural analysis, beam deflections, or strength of materials formulas like $\sigma = \frac{M y}{I}$.
+                    Kiemaen Core Online. Ready to assist with structural analysis, beam deflections, or strength of materials formulas like $\sigma = \frac{M y}{I}$.
                 </div>
             </div>
         </div>
@@ -89,7 +88,8 @@
             if (fileInput) formData.append('file', fileInput);
 
             try {
-                const response = await fetch('/api/generate', { method: 'POST', body: formData });
+                // FIXED: Target /generate instead of /api/generate to match FastAPI route
+                const response = await fetch('/generate', { method: 'POST', body: formData });
                 const data = await response.json();
                 
                 // Append AI Response
@@ -100,7 +100,7 @@
                 triggerMathRender();
             } catch (err) {
                 console.error("Transmission error:", err);
-                chatContainer.innerHTML += `<div class="text-left"><div class="inline-block bg-red-600/30 text-red-300 rounded p-3 text-sm max-w-[85%]">Error communicating with backend server.</div></div>`;
+                chatContainer.innerHTML += `<div class="text-left"><div class="inline-block bg-red-600/30 text-red-300 rounded p-3 text-sm max-w-[85%]">Critical Link Failure: Unable to reach Kiemaen Core.</div></div>`;
             }
         });
     </script>
