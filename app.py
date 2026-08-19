@@ -6,12 +6,15 @@ import os
 
 app = FastAPI()
 
-# Initialize the modern Google GenAI client
-try:
-    api_key = os.environ.get("GEMINI_API_KEY")
-    client = genai.Client(api_key=api_key) if api_key else None
-except Exception:
+# Securely grab and validate the API key on startup
+api_key = os.environ.get("GEMINI_API_KEY")
+
+if not api_key:
+    print("CRITICAL WARNING: GEMINI_API_KEY is missing from environment variables!")
     client = None
+else:
+    # Initialize the official client explicitly
+    client = genai.Client(api_key=api_key)
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -31,12 +34,11 @@ async def generate_response(
         if not client:
             raise HTTPException(
                 status_code=500, 
-                detail="Gemini client not initialized. Ensure GEMINI_API_KEY is set in your Render environment variables."
+                detail="Gemini client not initialized. Check Render Environment variables to ensure GEMINI_API_KEY is saved."
             )
             
         contents = [prompt]
         
-        # Handle optional file uploads
         if file:
             file_bytes = await file.read()
             contents.append(
@@ -46,7 +48,6 @@ async def generate_response(
                 )
             )
 
-        # Persona instructions mapping
         system_instructions = {
             "engineering": "You are Kiemaen AI configured as a professional Civil Engineering expert. Use precise calculations and technical standards.",
             "trading": "You are Kiemaen AI configured as an Institutional Trading core. Analyze market liquidity, technical patterns, and risk.",
@@ -54,14 +55,15 @@ async def generate_response(
             "general": "You are Kiemaen AI, an autonomous intelligence core."
         }
 
-        # Enable Google Search grounding tool using proper types config
+        # Enable live Google Search grounding tool
+        grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
         config = types.GenerateContentConfig(
             system_instruction=system_instructions.get(persona, system_instructions["general"]),
-            tools=[{"google_search": {}}],
+            tools=[grounding_tool],
             temperature=0.3
         )
 
-        # Generate response using the model
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=contents,
