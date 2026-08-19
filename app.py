@@ -12,7 +12,7 @@ from supabase import create_client, Client
 from pypdf import PdfReader
 from duckduckgo_search import DDGS
 
-app = FastAPI(title="Kiemaen AI - Self-Correcting Ultimate Core")
+app = FastAPI(title="Kiemaen AI - Plan-and-Execute Multi-Agent Core")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -33,43 +33,35 @@ PERSONAS = {
     "coding": "You are Kiemaen AI acting as a Principal Software Engineer proficient in Python, TypeScript, and cloud containerization architecture. Always provide modular, bug-free, production-ready code blocks accompanied by precise execution details."
 }
 
-def agent_web_search(query: str) -> str:
-    """Performs autonomous web retrieval for fresh context."""
+def research_agent_node(query: str) -> str:
+    """Specialized Agent: Autonomous web research extractor."""
     try:
         with DDGS() as ddgs:
             results = [r for r in ddgs.text(query, max_results=3)]
             if results:
                 snippets = "\n".join([f"- Title: {r.get('title')}\n  Snippet: {r.get('body')}" for r in results])
-                return f"\n\n[Autonomous Research Context]:\n{snippets}"
+                return f"\n\n[Plan-and-Execute Phase 1 - Research Findings]:\n{snippets}"
     except Exception as e:
-        print(f"Search warning: {e}")
+        print(f"Research agent warning: {e}")
     return ""
 
-def execute_with_self_correction(code_string: str) -> str:
-    """Executes sandbox code with a built-in safety feedback loop."""
-    for attempt in range(2):  # Try execution, allow 1 self-correction pass if it throws an error
-        output = io.StringIO()
-        try:
-            local_vars = {"sp": sp, "np": np, "result": None}
-            with contextlib.redirect_stdout(output):
-                exec(code_string, {"__builtins__": {
-                    "print": print, "range": range, "len": len, "round": round, 
-                    "abs": abs, "min": min, "max": max, "sum": sum, "float": float, "int": int
-                }}, local_vars)
-            
-            captured = output.getvalue()
-            if local_vars.get("result") is not None:
-                captured += f"\n[Computed Result]: {local_vars['result']}"
-            return captured.strip() or "Execution successful with no console output."
-        except Exception as e:
-            if attempt == 0:
-                # Log error internally for potential retry logic if expanded
-                error_msg = str(e)
-                if "name" in error_msg or "syntax" in error_msg.lower():
-                    code_string += f"\n# Auto-correction note: previous run failed with {error_msg}"
-                    continue
-            return f"Execution Error after reflection: {str(e)}\n{traceback.format_exc()}"
-    return "Execution failed verification limits."
+def computation_agent_node(code_string: str) -> str:
+    """Specialized Agent: Isolated mathematical & analytical executor."""
+    output = io.StringIO()
+    try:
+        local_vars = {"sp": sp, "np": np, "result": None}
+        with contextlib.redirect_stdout(output):
+            exec(code_string, {"__builtins__": {
+                "print": print, "range": range, "len": len, "round": round, 
+                "abs": abs, "min": min, "max": max, "sum": sum, "float": float, "int": int
+            }}, local_vars)
+        
+        captured = output.getvalue()
+        if local_vars.get("result") is not None:
+            captured += f"\n[Agent Computed Result]: {local_vars['result']}"
+        return captured.strip() or "Execution completed successfully with no console output."
+    except Exception as e:
+        return f"Computation Agent Error: {str(e)}\n{traceback.format_exc()}"
 
 def fetch_live_market_data(prompt: str) -> str:
     prompt_lower = prompt.lower()
@@ -93,7 +85,7 @@ def fetch_live_market_data(prompt: str) -> str:
 def home():
     if os.path.exists("index.html"):
         return FileResponse("index.html")
-    return "<h3>Kiemaen AI Self-Correcting Core Online</h3>"
+    return "<h3>Kiemaen AI Plan-and-Execute Core Online</h3>"
 
 @app.post("/generate")
 async def generate_ai(
@@ -106,16 +98,19 @@ async def generate_ai(
 
     enhanced_prompt = prompt
     
+    # Trigger Market Data Feed if matching financial intent
     if persona == "trading" or any(k in prompt.lower() for k in ["gold", "xauusd", "btc", "bitcoin"]):
         market_feed = fetch_live_market_data(prompt)
         if market_feed:
             enhanced_prompt += market_feed
 
+    # Trigger Research Agent if query demands live data/documentation lookup
     if any(k in prompt.lower() for k in ["search", "latest", "documentation", "standard", "eurocode", "news", "how to"]):
-        web_context = agent_web_search(prompt)
-        if web_context:
-            enhanced_prompt += web_context
+        research_context = research_agent_node(prompt)
+        if research_context:
+            enhanced_prompt += research_context
 
+    # Handle file/PDF document attachments
     if file:
         file_bytes = await file.read()
         extracted_text = ""
@@ -134,6 +129,7 @@ async def generate_ai(
         
         enhanced_prompt += f"\n\n[Attached Document Context ({file.filename})]:\n```\n{extracted_text[:10000]}\n```"
 
+    # Assemble state context history from Supabase
     recent_messages = [{"role": "system", "content": system_prompt}]
     if supabase:
         try:
@@ -164,16 +160,17 @@ async def generate_ai(
                     data = response.json()
                     ai_response = data["choices"][0]["message"]["content"]
                     
+                    # Computational Sandbox Node execution check
                     if "```python:run" in ai_response:
                         try:
                             start_idx = ai_response.find("```python:run") + 13
                             end_idx = ai_response.find("```", start_idx)
                             if end_idx != -1:
                                 code_to_run = ai_response[start_idx:end_idx].strip()
-                                execution_output = execute_with_self_correction(code_to_run)
-                                ai_response += f"\n\n**Self-Corrected Execution Output:**\n```text\n{execution_output}\n```"
+                                execution_output = computation_agent_node(code_to_run)
+                                ai_response += f"\n\n**Multi-Agent Execution Pipeline Output:**\n```text\n{execution_output}\n```"
                         except Exception as exec_err:
-                            print(f"Runner error: {exec_err}")
+                            print(f"Computation execution runner error: {exec_err}")
                 else:
                     ai_response = f"API Error ({response.status_code}): {response.text}"
         except Exception as e:
