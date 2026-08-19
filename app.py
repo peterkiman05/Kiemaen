@@ -6,14 +6,13 @@ import sympy as sp
 import numpy as np
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, FileResponse
-from pydantic import BaseModel
 import httpx
 import yfinance as yf
 from supabase import create_client, Client
 from pypdf import PdfReader
 from duckduckgo_search import DDGS
 
-app = FastAPI(title="Kiemaen AI - Ultimate Intelligence Core")
+app = FastAPI(title="Kiemaen AI - Ultimate Multi-Agent Core")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -34,20 +33,20 @@ PERSONAS = {
     "coding": "You are Kiemaen AI acting as a Principal Software Engineer proficient in Python, TypeScript, and cloud containerization architecture. Always provide modular, bug-free, production-ready code blocks accompanied by precise execution details."
 }
 
-def perform_web_search(query: str) -> str:
-    """Performs a keyless web search using DuckDuckGo to extract relevant technical documentation or context."""
+def agent_web_search_node(query: str) -> str:
+    """Agent Node 1: Autonomous Web Research Retriever."""
     try:
         with DDGS() as ddgs:
             results = [r for r in ddgs.text(query, max_results=3)]
             if results:
-                formatted_snippets = "\n".join([f"- Title: {r.get('title')}\n  Snippet: {r.get('body')}\n  URL: {r.get('href')}" for r in results])
-                return f"\n\n[Autonomous Web Search Results]:\n{formatted_snippets}"
+                snippets = "\n".join([f"- Title: {r.get('title')}\n  Snippet: {r.get('body')}" for r in results])
+                return f"\n\n[Agent Research Context (Web)]:\n{snippets}"
     except Exception as e:
-        print(f"Web search warning: {e}")
+        print(f"Agent search error: {e}")
     return ""
 
-def execute_python_code(code_string: str) -> str:
-    """Securely evaluates Python computational code blocks for exact math/engineering verification."""
+def agent_computation_node(code_string: str) -> str:
+    """Agent Node 2: Secure Mathematical & Engineering Sandbox Executor."""
     output = io.StringIO()
     try:
         local_vars = {"sp": sp, "np": np, "result": None}
@@ -59,10 +58,10 @@ def execute_python_code(code_string: str) -> str:
         
         captured = output.getvalue()
         if local_vars.get("result") is not None:
-            captured += f"\n[Computed Result]: {local_vars['result']}"
-        return captured.strip() or "Code executed successfully with no print output."
+            captured += f"\n[Agent Computed Result]: {local_vars['result']}"
+        return captured.strip() or "Execution completed successfully."
     except Exception as e:
-        return f"Execution Error: {str(e)}\n{traceback.format_exc()}"
+        return f"Agent Execution Error: {str(e)}\n{traceback.format_exc()}"
 
 def fetch_live_market_data(prompt: str) -> str:
     prompt_lower = prompt.lower()
@@ -71,16 +70,12 @@ def fetch_live_market_data(prompt: str) -> str:
         if "gold" in prompt_lower or "xauusd" in prompt_lower:
             ticker = yf.Ticker("GC=F")
             todays_data = ticker.history(period="1d")
-            current_price = 4395.00
-            if not todays_data.empty:
-                current_price = todase_price = todays_data['Close'].iloc[-1] if not todays_data.empty else 4395.00
+            current_price = todays_data['Close'].iloc[-1] if not todays_data.empty else 4395.00
             live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Gold (XAUUSD / GC=F) live trading price is currently anchored at ${current_price:.2f} USD."
         elif "btc" in prompt_lower or "bitcoin" in prompt_lower:
             ticker = yf.Ticker("BTC-USD")
             todays_data = ticker.history(period="1d")
-            current_price = 65000.00
-            if not todays_data.empty:
-                current_price = todays_data['Close'].iloc[-1]
+            current_price = todays_data['Close'].iloc[-1] if not todays_data.empty else 65000.00
             live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Bitcoin (BTC-USD) live trading price is currently anchored at ${current_price:.2f} USD."
     except Exception as e:
         print(f"Market fetch warning: {e}")
@@ -90,7 +85,7 @@ def fetch_live_market_data(prompt: str) -> str:
 def home():
     if os.path.exists("index.html"):
         return FileResponse("index.html")
-    return "<h3>Kiemaen AI Core Online (index.html missing)</h3>"
+    return "<h3>Kiemaen AI Multi-Agent Core Online</h3>"
 
 @app.post("/generate")
 async def generate_ai(
@@ -103,19 +98,19 @@ async def generate_ai(
 
     enhanced_prompt = prompt
     
-    # Trigger live market feeds if trading keywords match
-    if persona == "trading" or "gold" in prompt.lower() or "xauusd" in prompt.lower() or "bitcoin" in prompt.lower():
+    # 1. Trigger Market Data Sub-Routine if applicable
+    if persona == "trading" or any(k in prompt.lower() for k in ["gold", "xauusd", "btc", "bitcoin"]):
         market_feed = fetch_live_market_data(prompt)
         if market_feed:
             enhanced_prompt += market_feed
 
-    # Autonomous Web Search trigger for research / technical keywords
-    if any(k in prompt.lower() for k in ["search", "latest", "documentation", "standard", "eurocode", "how to", "news"]):
-        web_results = perform_web_search(prompt)
-        if web_results:
-            enhanced_prompt += web_results
+    # 2. Trigger Autonomous Research Agent if query demands external knowledge
+    if any(k in prompt.lower() for k in ["search", "latest", "documentation", "standard", "eurocode", "news", "how to"]):
+        web_context = agent_web_search_node(prompt)
+        if web_context:
+            enhanced_prompt += web_context
 
-    # Handle file uploads (PDFs and text formats)
+    # 3. Handle Document Ingestion (PDFs/Text files)
     if file:
         file_bytes = await file.read()
         extracted_text = ""
@@ -132,9 +127,9 @@ async def generate_ai(
             except Exception:
                 extracted_text = "[Binary file uploaded]"
         
-        enhanced_prompt += f"\n\n[Attached File Content ({file.filename})]:\n```\n{extracted_text[:10000]}\n```"
+        enhanced_prompt += f"\n\n[Attached Document Context ({file.filename})]:\n```\n{extracted_text[:10000]}\n```"
 
-    # Pull prior conversation history context from Supabase
+    # Pull state history from Supabase
     recent_messages = [{"role": "system", "content": system_prompt}]
     if supabase:
         try:
@@ -157,25 +152,25 @@ async def generate_ai(
             payload = {
                 "model": "openai/gpt-oss-120b",
                 "messages": recent_messages,
-                "temperature": 0.4
+                "temperature": 0.3
             }
-            async with httpx.AsyncClient(timeout=35.0) as client:
+            async with httpx.AsyncClient(timeout=40.0) as client:
                 response = await client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
                 if response.status_code == 200:
                     data = response.json()
                     ai_response = data["choices"][0]["message"]["content"]
                     
-                    # Computational Sandbox Execution Check
+                    # 4. Agent Computational Verification Pass
                     if "```python:run" in ai_response:
                         try:
                             start_idx = ai_response.find("```python:run") + 13
                             end_idx = ai_response.find("```", start_idx)
                             if end_idx != -1:
                                 code_to_run = ai_response[start_idx:end_idx].strip()
-                                execution_output = execute_python_code(code_to_run)
-                                ai_response += f"\n\n**Computation Execution Output:**\n```text\n{execution_output}\n```"
+                                execution_output = agent_computation_node(code_to_run)
+                                ai_response += f"\n\n**Multi-Agent Execution & Verification Log:**\n```text\n{execution_output}\n```"
                         except Exception as exec_err:
-                            print(f"Sandbox runner error: {exec_err}")
+                            print(f"Agent runner error: {exec_err}")
                 else:
                     ai_response = f"API Error ({response.status_code}): {response.text}"
         except Exception as e:
