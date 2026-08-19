@@ -6,9 +6,10 @@ import os
 
 app = FastAPI()
 
-# Safely initialize the GenAI client (picks up GEMINI_API_KEY environment variable)
+# Explicitly initialize the client using the GEMINI_API_KEY environment variable
 try:
-    client = genai.Client()
+    api_key = os.environ.get("GEMINI_API_KEY")
+    client = genai.Client(api_key=api_key) if api_key else None
 except Exception:
     client = None
 
@@ -28,10 +29,14 @@ async def generate_response(
 ):
     try:
         if not client:
-            raise HTTPException(status_code=500, detail="Gemini client not initialized. Check API key configuration.")
+            raise HTTPException(
+                status_code=500, 
+                detail="Gemini client not initialized. Ensure GEMINI_API_KEY is set in your Render environment variables."
+            )
             
         contents = [prompt]
         
+        # Handle optional file uploads (documents, text, images, etc.)
         if file:
             file_bytes = await file.read()
             contents.append(
@@ -41,22 +46,24 @@ async def generate_response(
                 )
             )
 
+        # Persona instructions mapping
         system_instructions = {
-            "engineering": "You are Kiemaen AI configured as a professional Civil Engineering expert.",
-            "trading": "You are Kiemaen AI configured as an Institutional Trading core.",
-            "coding": "You are Kiemaen AI configured as an advanced Software Engineering core.",
+            "engineering": "You are Kiemaen AI configured as a professional Civil Engineering expert. Use precise calculations and technical standards.",
+            "trading": "You are Kiemaen AI configured as an Institutional Trading core. Analyze market liquidity, technical patterns, and risk.",
+            "coding": "You are Kiemaen AI configured as an advanced Software Engineering core. Provide clean, efficient code blocks.",
             "general": "You are Kiemaen AI, an autonomous intelligence core."
         }
 
-        # Enable live internet-connected web search grounding
+        # Enable live internet-connected web search grounding tool
         grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
         config = types.GenerateContentConfig(
             system_instruction=system_instructions.get(persona, system_instructions["general"]),
-            tools=[grounding_tool],
+            tools=[grounding_tool],  # Bypasses the knowledge cutoff by pulling live web data
             temperature=0.3
         )
 
+        # Generate response using model and live search tool
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=contents,
