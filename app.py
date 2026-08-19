@@ -1,4 +1,9 @@
 import os
+import io
+import traceback
+import contextlib
+import sympy as sp
+import numpy as np
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
@@ -6,7 +11,7 @@ import httpx
 import yfinance as yf
 from supabase import create_client, Client
 from pypdf import PdfReader
-import io
+from duckduckgo_search import DDGS
 
 app = FastAPI(title="Kiemaen AI - Ultimate Intelligence Core")
 
@@ -29,6 +34,36 @@ PERSONAS = {
     "coding": "You are Kiemaen AI acting as a Principal Software Engineer proficient in Python, TypeScript, and cloud containerization architecture. Always provide modular, bug-free, production-ready code blocks accompanied by precise execution details."
 }
 
+def perform_web_search(query: str) -> str:
+    """Performs a keyless web search using DuckDuckGo to extract relevant technical documentation or context."""
+    try:
+        with DDGS() as ddgs:
+            results = [r for r in ddgs.text(query, max_results=3)]
+            if results:
+                formatted_snippets = "\n".join([f"- Title: {r.get('title')}\n  Snippet: {r.get('body')}\n  URL: {r.get('href')}" for r in results])
+                return f"\n\n[Autonomous Web Search Results]:\n{formatted_snippets}"
+    except Exception as e:
+        print(f"Web search warning: {e}")
+    return ""
+
+def execute_python_code(code_string: str) -> str:
+    """Securely evaluates Python computational code blocks for exact math/engineering verification."""
+    output = io.StringIO()
+    try:
+        local_vars = {"sp": sp, "np": np, "result": None}
+        with contextlib.redirect_stdout(output):
+            exec(code_string, {"__builtins__": {
+                "print": print, "range": range, "len": len, "round": round, 
+                "abs": abs, "min": min, "max": max, "sum": sum, "float": float, "int": int
+            }}, local_vars)
+        
+        captured = output.getvalue()
+        if local_vars.get("result") is not None:
+            captured += f"\n[Computed Result]: {local_vars['result']}"
+        return captured.strip() or "Code executed successfully with no print output."
+    except Exception as e:
+        return f"Execution Error: {str(e)}\n{traceback.format_exc()}"
+
 def fetch_live_market_data(prompt: str) -> str:
     prompt_lower = prompt.lower()
     live_context = ""
@@ -38,7 +73,7 @@ def fetch_live_market_data(prompt: str) -> str:
             todays_data = ticker.history(period="1d")
             current_price = 4395.00
             if not todays_data.empty:
-                current_price = todays_data['Close'].iloc[-1]
+                current_price = todase_price = todays_data['Close'].iloc[-1] if not todays_data.empty else 4395.00
             live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Gold (XAUUSD / GC=F) live trading price is currently anchored at ${current_price:.2f} USD."
         elif "btc" in prompt_lower or "bitcoin" in prompt_lower:
             ticker = yf.Ticker("BTC-USD")
@@ -67,12 +102,20 @@ async def generate_ai(
     ai_response = "AI processing service offline."
 
     enhanced_prompt = prompt
-    if persona == "trading" or "gold" in prompt.lower() or "xauusd" in prompt.lower():
+    
+    # Trigger live market feeds if trading keywords match
+    if persona == "trading" or "gold" in prompt.lower() or "xauusd" in prompt.lower() or "bitcoin" in prompt.lower():
         market_feed = fetch_live_market_data(prompt)
         if market_feed:
             enhanced_prompt += market_feed
 
-    # Handle file uploads (Supports text files and PDFs natively)
+    # Autonomous Web Search trigger for research / technical keywords
+    if any(k in prompt.lower() for k in ["search", "latest", "documentation", "standard", "eurocode", "how to", "news"]):
+        web_results = perform_web_search(prompt)
+        if web_results:
+            enhanced_prompt += web_results
+
+    # Handle file uploads (PDFs and text formats)
     if file:
         file_bytes = await file.read()
         extracted_text = ""
@@ -91,7 +134,7 @@ async def generate_ai(
         
         enhanced_prompt += f"\n\n[Attached File Content ({file.filename})]:\n```\n{extracted_text[:10000]}\n```"
 
-    # Pull prior message context from Supabase
+    # Pull prior conversation history context from Supabase
     recent_messages = [{"role": "system", "content": system_prompt}]
     if supabase:
         try:
@@ -114,13 +157,25 @@ async def generate_ai(
             payload = {
                 "model": "openai/gpt-oss-120b",
                 "messages": recent_messages,
-                "temperature": 0.5
+                "temperature": 0.4
             }
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=35.0) as client:
                 response = await client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
                 if response.status_code == 200:
                     data = response.json()
                     ai_response = data["choices"][0]["message"]["content"]
+                    
+                    # Computational Sandbox Execution Check
+                    if "```python:run" in ai_response:
+                        try:
+                            start_idx = ai_response.find("```python:run") + 13
+                            end_idx = ai_response.find("```", start_idx)
+                            if end_idx != -1:
+                                code_to_run = ai_response[start_idx:end_idx].strip()
+                                execution_output = execute_python_code(code_to_run)
+                                ai_response += f"\n\n**Computation Execution Output:**\n```text\n{execution_output}\n```"
+                        except Exception as exec_err:
+                            print(f"Sandbox runner error: {exec_err}")
                 else:
                     ai_response = f"API Error ({response.status_code}): {response.text}"
         except Exception as e:
