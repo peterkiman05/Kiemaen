@@ -8,3 +8,4 @@ pypdf
 python-multipart
 sympy
 numpy
+duckduckgo_search
