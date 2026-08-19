@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiemaen AI - Autonomous Core</title>
-    <!-- Fix for 'marked is not defined' error -->
+    <!-- Marked library script for rendering markdown/tables -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
@@ -61,7 +61,6 @@
             font-weight: 600;
         }
 
-        /* Auto-detector status display badge in header */
         .auto-status {
             background: var(--bg-color);
             border: 1px solid var(--border-color);
@@ -177,13 +176,14 @@
             display: none;
         }
 
+        /* Single horizontal row input form container */
         .input-form {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
             padding: 0.5rem 0.75rem;
-            border-radius: 0.75rem;
+            border-radius: 2rem;
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 0.5rem;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
@@ -195,28 +195,16 @@
             resize: none;
             outline: none;
             font-size: 0.95rem;
-            min-height: 40px;
-            max-height: 120px;
+            flex: 1;
+            max-height: 100px;
+            padding: 0.3rem;
+            line-height: 1.4;
         }
 
-        .input-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 0.4rem;
-        }
-
-        .action-left {
+        .action-group {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-        }
-
-        .action-right {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         /* SVG Icon Buttons */
@@ -232,6 +220,7 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
         .icon-btn svg {
@@ -264,6 +253,7 @@
             align-items: center;
             justify-content: center;
             transition: box-shadow 0.2s;
+            flex-shrink: 0;
         }
 
         button.execute-btn svg {
@@ -288,6 +278,7 @@
             display: none;
             align-items: center;
             gap: 0.3rem;
+            margin-left: 0.5rem;
         }
     </style>
 </head>
@@ -298,7 +289,6 @@
             <div class="status-dot"></div>
             <h1>Kiemaen AI</h1>
         </div>
-        <!-- Auto-detector Status Badge replacing manual dropdown -->
         <div id="detector-badge" class="auto-status">⚡ Auto: General Core</div>
     </header>
 
@@ -313,26 +303,25 @@
         </div>
 
         <form id="chat-form" class="input-form">
+            <!-- Left side: File attachment icon -->
+            <label class="icon-btn" for="file-input" title="Attach File">
+                <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H9v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S5.5 2.79 5.5 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1z"/></svg>
+            </label>
+            <input type="file" id="file-input">
+            
+            <!-- Text input box in the middle -->
             <textarea id="prompt-input" placeholder="Message Kiemaen AI..." rows="1" required></textarea>
-            <div class="input-actions">
-                <!-- Left side: File attachment icon -->
-                <div class="action-left">
-                    <label class="icon-btn" for="file-input" title="Attach File">
-                        <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H9v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S5.5 2.79 5.5 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1z"/></svg>
-                    </label>
-                    <input type="file" id="file-input">
-                    <span id="file-indicator">📄 <span id="file-name-text"></span></span>
-                </div>
-                
-                <!-- Right side: Voice recording and execution icons -->
-                <div class="action-right">
-                    <button type="button" id="mic-btn" class="icon-btn" title="Voice Input">
-                        <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.39-.9.89 0 2.79-2.25 5.04-5.04 5.04s-5.04-2.25-5.04-5.04c0-.5-.41-.89-.9-.89s-.9.39-.9.89c0 3.18 2.45 5.82 5.5 6.27V21h-2.5c-.55 0-1 .45-1 1s.45 1 1 1h7c.55 0 1-.45 1-1s-.45-1-1-1h-2.5v-2.84c3.05-.45 5.5-3.09 5.5-6.27 0-.5-.41-.89-.9-.89z"/></svg>
-                    </button>
-                    <button type="submit" class="execute-btn" title="Execute">
-                        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                    </button>
-                </div>
+            
+            <span id="file-indicator">📄 <span id="file-name-text"></span></span>
+
+            <!-- Right side: Mic and Execute icons in the same row -->
+            <div class="action-group">
+                <button type="button" id="mic-btn" class="icon-btn" title="Voice Input">
+                    <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.39-.9.89 0 2.79-2.25 5.04-5.04 5.04s-5.04-2.25-5.04-5.04c0-.5-.41-.89-.9-.89s-.9.39-.9.89c0 3.18 2.45 5.82 5.5 6.27V21h-2.5c-.55 0-1 .45-1 1s.45 1 1 1h7c.55 0 1-.45 1-1s-.45-1-1-1h-2.5v-2.84c3.05-.45 5.5-3.09 5.5-6.27 0-.5-.41-.89-.9-.89z"/></svg>
+                </button>
+                <button type="submit" class="execute-btn" title="Execute">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
             </div>
         </form>
     </div>
@@ -350,7 +339,6 @@
         let selectedFile = null;
         let activePersona = 'general';
 
-        // Auto-detect file selection
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 selectedFile = e.target.files[0];
@@ -359,7 +347,6 @@
             }
         });
 
-        // Intelligent Auto-Detector: Analyzes user prompt to determine persona context
         promptInput.addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
             if (val.includes('beam') || val.includes('stress') || val.includes('load') || val.includes('concrete') || val.includes('shear')) {
@@ -377,7 +364,6 @@
             }
         });
 
-        // Speech Recognition (Speech-to-Text)
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
             const recognition = new SpeechRecognition();
@@ -393,23 +379,13 @@
                 recognition.start();
             });
 
-            recognition.onstart = () => {
-                micBtn.classList.add('listening');
-            };
-
+            recognition.onstart = () => micBtn.classList.add('listening');
             recognition.onresult = (event) => {
-                const speechToText = event.results[0][0].transcript;
-                promptInput.value += (promptInput.value ? ' ' : '') + speechToText;
-                promptInput.dispatchEvent(new Event('input')); // Trigger auto-detector
+                promptInput.value += (promptInput.value ? ' ' : '') + event.results[0][0].transcript;
+                promptInput.dispatchEvent(new Event('input'));
             };
-
-            recognition.onerror = () => {
-                micBtn.classList.remove('listening');
-            };
-
-            recognition.onend = () => {
-                micBtn.classList.remove('listening');
-            };
+            recognition.onerror = () => micBtn.classList.remove('listening');
+            recognition.onend = () => micBtn.classList.remove('listening');
         } else {
             micBtn.style.display = 'none';
         }
@@ -453,9 +429,7 @@
             const formData = new FormData();
             formData.append('prompt', currentPrompt);
             formData.append('persona', currentPersona);
-            if (currentFile) {
-                formData.append('file', currentFile);
-            }
+            if (currentFile) formData.append('file', currentFile);
 
             try {
                 const response = await fetch('/generate', { method: 'POST', body: formData });
