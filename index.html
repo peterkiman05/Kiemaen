@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiemaen AI - Ultimate Intelligence Core</title>
+    <!-- Include Marked.js for real Markdown and Table rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.js"></script>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -80,7 +82,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            max-width: 900px;
+            max-width: 950px;
             width: 100%;
             margin: 0 auto;
             padding: 1.5rem;
@@ -98,12 +100,11 @@
         }
 
         .message {
-            padding: 1rem 1.25rem;
+            padding: 1.25rem;
             border-radius: 0.75rem;
             line-height: 1.6;
-            max-width: 85%;
+            max-width: 90%;
             word-wrap: break-word;
-            white-space: pre-wrap;
         }
 
         .message.user {
@@ -111,6 +112,7 @@
             color: var(--text-primary);
             align-self: flex-end;
             border: 1px solid #334155;
+            white-space: pre-wrap;
         }
 
         .message.ai {
@@ -123,11 +125,44 @@
             max-width: 100%;
         }
 
+        /* Markdown Styling inside AI messages */
+        .message.ai table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .message.ai th, .message.ai td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        .message.ai th {
+            background-color: #1e293b;
+            color: var(--accent-color);
+        }
+
+        .message.ai pre {
+            background: #090d16;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 0.75rem 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .message.ai code {
+            font-family: monospace;
+            color: #38bdf8;
+        }
+
         .ai-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 0.5rem;
             font-size: 0.85rem;
@@ -280,12 +315,12 @@
                 <div class="ai-header">
                     <span>KIEMAEN SYSTEM ONLINE</span>
                 </div>
-                Greetings. Autonomous research nodes, secure simulation sandboxes, voice interface, and state persistence are fully active. How shall we execute today?
+                Greetings. Autonomous research nodes, secure simulation sandboxes, live market feeds, voice interface, and database state persistence are fully active. How shall we execute today?
             </div>
         </div>
 
         <form id="chat-form" class="input-form">
-            <textarea id="prompt-input" placeholder="Type your prompt or use voice recording..." rows="2" required></textarea>
+            <textarea id="prompt-input" placeholder="Type prompt, calculation query, or use voice..." rows="2" required></textarea>
             <div class="input-actions">
                 <div class="action-buttons">
                     <label class="file-upload-label" for="file-input">
@@ -356,14 +391,13 @@
                 micBtn.textContent = '🎙️ Speak';
             };
         } else {
-            micBtn.style.display = 'none'; // Hide if browser doesn't support
+            micBtn.style.display = 'none';
         }
 
         // Text to Speech Function
         function speakText(text) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop prior audio
-                // Strip markdown backticks/code tags for clean speech output
+                window.speechSynthesis.cancel();
                 const cleanText = text.replace(/```[\s\S]*?```/g, "Code block omitted for voice.")
                                       .replace(/[*#_`-]/g, '');
                 const utterance = new SpeechSynthesisUtterance(cleanText);
@@ -389,7 +423,6 @@
             const currentPersona = personaSelect.value;
             const currentFile = selectedFile;
 
-            // Reset Input
             promptInput.value = '';
             fileInput.value = '';
             selectedFile = null;
@@ -418,25 +451,20 @@
                 const data = await response.json();
                 
                 const responseText = data.response || "No response received.";
+                const htmlContent = marked.parse(responseText);
                 
                 aiMsgDiv.innerHTML = `
                     <div class="ai-header">
                         <span>KIEMAEN AI (${currentPersona.toUpperCase()})</span>
                         <button class="speak-btn" onclick="speakText(this.dataset.text)" data-text="${encodeURIComponent(responseText)}">🔊 Listen</button>
                     </div>
-                    ${escapeHtml(responseText)}
+                    ${htmlContent}
                 `;
             } catch (err) {
                 aiMsgDiv.innerHTML = `<div class="ai-header"><span>ERROR</span></div>Network or server processing fault: ${err.message}`;
             }
             chatWindow.scrollTop = chatWindow.scrollHeight;
         });
-
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;")
-                       .replace(/</g, "&lt;")
-                       .replace(/>/g, "&gt;");
-        }
     </script>
 </body>
 </html>
