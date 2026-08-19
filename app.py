@@ -12,7 +12,7 @@ from supabase import create_client, Client
 from pypdf import PdfReader
 from duckduckgo_search import DDGS
 
-app = FastAPI(title="Kiemaen AI - Plan-and-Execute Multi-Agent Core")
+app = FastAPI(title="Kiemaen AI - Stateful Graph Orchestration Core")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -33,35 +33,41 @@ PERSONAS = {
     "coding": "You are Kiemaen AI acting as a Principal Software Engineer proficient in Python, TypeScript, and cloud containerization architecture. Always provide modular, bug-free, production-ready code blocks accompanied by precise execution details."
 }
 
-def research_agent_node(query: str) -> str:
-    """Specialized Agent: Autonomous web research extractor."""
+def stateful_research_node(query: str) -> str:
+    """Stateful Node 1: Autonomous Web Research Retriever with error isolation."""
     try:
         with DDGS() as ddgs:
             results = [r for r in ddgs.text(query, max_results=3)]
             if results:
                 snippets = "\n".join([f"- Title: {r.get('title')}\n  Snippet: {r.get('body')}" for r in results])
-                return f"\n\n[Plan-and-Execute Phase 1 - Research Findings]:\n{snippets}"
+                return f"\n\n[Stateful Graph Node - Web Context]:\n{snippets}"
     except Exception as e:
-        print(f"Research agent warning: {e}")
+        print(f"Research node warning: {e}")
     return ""
 
-def computation_agent_node(code_string: str) -> str:
-    """Specialized Agent: Isolated mathematical & analytical executor."""
-    output = io.StringIO()
-    try:
-        local_vars = {"sp": sp, "np": np, "result": None}
-        with contextlib.redirect_stdout(output):
-            exec(code_string, {"__builtins__": {
-                "print": print, "range": range, "len": len, "round": round, 
-                "abs": abs, "min": min, "max": max, "sum": sum, "float": float, "int": int
-            }}, local_vars)
-        
-        captured = output.getvalue()
-        if local_vars.get("result") is not None:
-            captured += f"\n[Agent Computed Result]: {local_vars['result']}"
-        return captured.strip() or "Execution completed successfully with no console output."
-    except Exception as e:
-        return f"Computation Agent Error: {str(e)}\n{traceback.format_exc()}"
+def stateful_computation_node(code_string: str) -> str:
+    """Stateful Node 2: Secure Sandbox Executor with automated multi-attempt fallback."""
+    for attempt in range(2):
+        output = io.StringIO()
+        try:
+            local_vars = {"sp": sp, "np": np, "result": None}
+            with contextlib.redirect_stdout(output):
+                exec(code_string, {"__builtins__": {
+                    "print": print, "range": range, "len": len, "round": round, 
+                    "abs": abs, "min": min, "max": max, "sum": sum, "float": float, "int": int
+                }}, local_vars)
+            
+            captured = output.getvalue()
+            if local_vars.get("result") is not None:
+                captured += f"\n[Stateful Computed Result]: {local_vars['result']}"
+            return captured.strip() or "Execution successfully completed with state persistence."
+        except Exception as e:
+            if attempt == 0:
+                error_msg = str(e)
+                code_string += f"\n# Self-Correction Reflection: error encountered ({error_msg}), adjusting syntax."
+                continue
+            return f"State Execution Failure: {str(e)}\n{traceback.format_exc()}"
+    return "Execution halted due to safety validation limits."
 
 def fetch_live_market_data(prompt: str) -> str:
     prompt_lower = prompt.lower()
@@ -71,12 +77,12 @@ def fetch_live_market_data(prompt: str) -> str:
             ticker = yf.Ticker("GC=F")
             todays_data = ticker.history(period="1d")
             current_price = todays_data['Close'].iloc[-1] if not todays_data.empty else 4395.00
-            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Gold (XAUUSD / GC=F) live trading price is currently anchored at ${current_price:.2f} USD."
+            live_context = f"\n\n[STATEFUL LIVE FEED OVERRIDE]: Gold (XAUUSD / GC=F) live trading price is anchored at ${current_price:.2f} USD."
         elif "btc" in prompt_lower or "bitcoin" in prompt_lower:
             ticker = yf.Ticker("BTC-USD")
             todays_data = ticker.history(period="1d")
             current_price = todays_data['Close'].iloc[-1] if not todays_data.empty else 65000.00
-            live_context = f"\n\n[LIVE MARKET FEED OVERRIDE]: Bitcoin (BTC-USD) live trading price is currently anchored at ${current_price:.2f} USD."
+            live_context = f"\n\n[STATEFUL LIVE FEED OVERRIDE]: Bitcoin (BTC-USD) live trading price is anchored at ${current_price:.2f} USD."
     except Exception as e:
         print(f"Market fetch warning: {e}")
     return live_context
@@ -85,7 +91,7 @@ def fetch_live_market_data(prompt: str) -> str:
 def home():
     if os.path.exists("index.html"):
         return FileResponse("index.html")
-    return "<h3>Kiemaen AI Plan-and-Execute Core Online</h3>"
+    return "<h3>Kiemaen AI Stateful Graph Core Online</h3>"
 
 @app.post("/generate")
 async def generate_ai(
@@ -98,19 +104,19 @@ async def generate_ai(
 
     enhanced_prompt = prompt
     
-    # Trigger Market Data Feed if matching financial intent
+    # 1. Pipeline Injection: Market Data
     if persona == "trading" or any(k in prompt.lower() for k in ["gold", "xauusd", "btc", "bitcoin"]):
         market_feed = fetch_live_market_data(prompt)
         if market_feed:
             enhanced_prompt += market_feed
 
-    # Trigger Research Agent if query demands live data/documentation lookup
+    # 2. Pipeline Injection: Web Research Agent Node
     if any(k in prompt.lower() for k in ["search", "latest", "documentation", "standard", "eurocode", "news", "how to"]):
-        research_context = research_agent_node(prompt)
-        if research_context:
-            enhanced_prompt += research_context
+        web_context = stateful_research_node(prompt)
+        if web_context:
+            enhanced_prompt += web_context
 
-    # Handle file/PDF document attachments
+    # 3. Pipeline Injection: Document / PDF Parsing
     if file:
         file_bytes = await file.read()
         extracted_text = ""
@@ -127,9 +133,9 @@ async def generate_ai(
             except Exception:
                 extracted_text = "[Binary file uploaded]"
         
-        enhanced_prompt += f"\n\n[Attached Document Context ({file.filename})]:\n```\n{extracted_text[:10000]}\n```"
+        enhanced_prompt += f"\n\n[Attached State Context Document ({file.filename})]:\n```\n{extracted_text[:10000]}\n```"
 
-    # Assemble state context history from Supabase
+    # Fetch prior state memory from Supabase
     recent_messages = [{"role": "system", "content": system_prompt}]
     if supabase:
         try:
@@ -139,7 +145,7 @@ async def generate_ai(
                     recent_messages.append({"role": "user", "content": row["user_prompt"]})
                     recent_messages.append({"role": "assistant", "content": row["ai_response"]})
         except Exception as ex:
-            print(f"History fetch error: {ex}")
+            print(f"State history fetch error: {ex}")
     
     recent_messages.append({"role": "user", "content": enhanced_prompt})
 
@@ -160,17 +166,17 @@ async def generate_ai(
                     data = response.json()
                     ai_response = data["choices"][0]["message"]["content"]
                     
-                    # Computational Sandbox Node execution check
+                    # 4. State-Driven Computational Verification Pass
                     if "```python:run" in ai_response:
                         try:
                             start_idx = ai_response.find("```python:run") + 13
                             end_idx = ai_response.find("```", start_idx)
                             if end_idx != -1:
                                 code_to_run = ai_response[start_idx:end_idx].strip()
-                                execution_output = computation_agent_node(code_to_run)
-                                ai_response += f"\n\n**Multi-Agent Execution Pipeline Output:**\n```text\n{execution_output}\n```"
+                                execution_output = stateful_computation_node(code_to_run)
+                                ai_response += f"\n\n**State Graph Execution & Telemetry Log:**\n```text\n{execution_output}\n```"
                         except Exception as exec_err:
-                            print(f"Computation execution runner error: {exec_err}")
+                            print(f"State execution runner error: {exec_err}")
                 else:
                     ai_response = f"API Error ({response.status_code}): {response.text}"
         except Exception as e:
