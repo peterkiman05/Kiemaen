@@ -1,14 +1,17 @@
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import os
 
 app = FastAPI()
 
-# Configure the standard Google Generative AI library directly with your API key
-api_key = os.environ.get("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
+# Initialize the modern Google GenAI client
+try:
+    api_key = os.environ.get("GEMINI_API_KEY")
+    client = genai.Client(api_key=api_key) if api_key else None
+except Exception:
+    client = None
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -25,10 +28,22 @@ async def generate_response(
     file: UploadFile = File(None)
 ):
     try:
-        if not api_key:
+        if not client:
             raise HTTPException(
                 status_code=500, 
-                detail="GEMINI_API_KEY is missing from environment variables."
+                detail="Gemini client not initialized. Ensure GEMINI_API_KEY is set in your Render environment variables."
+            )
+            
+        contents = [prompt]
+        
+        # Handle optional file uploads
+        if file:
+            file_bytes = await file.read()
+            contents.append(
+                types.Part.from_bytes(
+                    data=file_bytes,
+                    mime_type=file.content_type
+                )
             )
 
         # Persona instructions mapping
@@ -39,27 +54,19 @@ async def generate_response(
             "general": "You are Kiemaen AI, an autonomous intelligence core."
         }
 
-        # Setup model with system instructions and Google Search grounding enabled
-        model_name = "gemini-2.5-flash"
-        system_instruction = system_instructions.get(persona, system_instructions["general"])
-        
-        generation_model = genai.GenerativeModel(
-            model_name=model_name,
-            system_instruction=system_instruction,
-            tools='default_search'  # Enables built-in Google Search grounding
+        # Enable Google Search grounding tool using proper types config
+        config = types.GenerateContentConfig(
+            system_instruction=system_instructions.get(persona, system_instructions["general"]),
+            tools=[{"google_search": {}}],
+            temperature=0.3
         )
 
-        # Handle contents (file bytes + prompt text)
-        contents = [prompt]
-        if file:
-            file_bytes = await file.read()
-            contents.insert(0, {
-                'mime_type': file.content_type,
-                'data': file_bytes
-            })
-
-        # Generate the response
-        response = generation_model.generate_content(contents)
+        # Generate response using the model
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents,
+            config=config
+        )
 
         return {"response": response.text}
 
