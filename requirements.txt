@@ -1,11 +1,4 @@
 fastapi
 uvicorn
-requests
-httpx
-yfinance
-supabase
-pypdf
+google-genai
 python-multipart
-sympy
-numpy
-duckduckgo_search
