@@ -1,108 +1,231 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Civil Engineering AI Assistant</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kiemaen AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- KaTeX CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
-    <!-- KaTeX Core JS -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
-    <!-- KaTeX Auto-Render Extension -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
-        onload="renderMathInElement(document.body, {
-            delimiters: [
-                {left: '$$', right: '$$', display: true},
-                {left: '$', right: '$', display: false},
-                {left: '\\(', right: '\\)', display: false},
-                {left: '\\[', right: '\\]', display: true}
-            ]
-        });"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* Prevents elastic scrolling glitches on mobile */
+        body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center p-4">
-    <div class="w-full max-w-3xl bg-slate-800 rounded-lg shadow-xl p-6 flex flex-col h-[90vh]">
-        <header class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
-            <h1 class="text-xl font-bold">Civil Engineering AI Assistant</h1>
-            <span class="text-xs bg-blue-600/30 text-blue-400 px-2 py-1 rounded border border-blue-500/30">KaTeX & PDF Enabled</span>
-        </header>
+<body class="bg-gray-900 text-gray-100 flex flex-col md:flex-row">
+
+    <!-- History Sidebar (Hidden on mobile by default, swipe/toggle can display or use full screen chat) -->
+    <aside class="w-64 bg-gray-800 border-r border-gray-700 hidden md:flex flex-col h-full">
+        <div class="p-4 border-b border-gray-700 font-bold text-blue-400 flex justify-between items-center">
+            <span>Chat History</span>
+            <div class="flex gap-1">
+                <button onclick="loadHistory()" class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-gray-300" title="Refresh">🔄</button>
+                <button onclick="clearHistory()" class="text-xs bg-red-900/60 hover:bg-red-800 px-2 py-1 rounded text-red-200" title="Clear History">🗑️</button>
+            </div>
+        </div>
+        <div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-2 text-xs text-gray-300">
+            <div class="p-2 text-gray-500 italic">Loading history...</div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <div class="flex-1 flex flex-col h-full relative">
         
-        <div id="chat-container" class="flex-1 overflow-y-auto space-y-4 pr-2 mb-4">
-            <div class="text-left">
-                <div class="inline-block bg-slate-700 text-slate-100 rounded p-3 text-sm max-w-[85%]">
-                    Kiemaen Core Online. Ready to assist with structural analysis, beam deflections, or strength of materials formulas like $\sigma = \frac{M y}{I}$.
+        <!-- Header & Persona Selector -->
+        <header class="bg-gray-800 p-3 md:p-4 border-b border-gray-700 flex justify-between items-center shadow-md z-10">
+            <h1 class="text-lg md:text-xl font-bold text-blue-400">Kiemaen AI</h1>
+            <select id="persona" class="bg-gray-700 text-xs md:text-sm p-2 rounded border border-gray-600 focus:outline-none text-white">
+                <option value="general">General AI</option>
+                <option value="engineering">Civil Engineering</option>
+                <option value="trading">Financial Trading</option>
+                <option value="coding">Software Coding</option>
+            </select>
+        </header>
+
+        <!-- Chat Messages Box (Padded bottom so messages aren't hidden behind the fixed input bar) -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto pb-32 md:pb-28">
+            <div class="flex justify-start">
+                <div class="bg-gray-800 p-3 rounded-lg max-w-[85%]. md:max-w-xl text-sm border border-gray-700">
+                    Kiemaen AI online. Type a prompt or attach a file below!
                 </div>
             </div>
         </div>
 
-        <form id="chat-form" class="space-y-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-            <div class="flex gap-2">
-                <select id="persona" class="flex-1 bg-slate-700 border border-slate-600 rounded p-2 text-sm focus:outline-none focus:border-blue-500">
-                    <option value="general">General Civil Engineering</option>
-                    <option value="structures">Structural Analysis (Beams & Trusses)</option>
-                    <option value="materials">Strength of Materials</option>
-                </select>
-            </div>
-            
-            <textarea id="prompt-input" rows="2" placeholder="Ask a question or enter structural formulas (e.g., $\int \frac{M}{EI} dx$)..." class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-sm focus:outline-none focus:border-blue-500"></textarea>
-            
-            <div class="flex justify-between items-center pt-1">
-                <div class="flex items-center space-x-2">
-                    <input type="file" id="file-input" accept=".pdf" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
+        <!-- Fixed Bottom Input Form (Higher than mobile bottom controls, won't scroll away) -->
+        <div class="fixed bottom-0 left-0 right-0 bg-gray-800/95 backdrop-blur border-t border-gray-700 p-3 md:p-4 z-20 pb-6 md:pb-4 shadow-lg">
+            <form id="chat-form" class="max-w-3xl mx-auto flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <input type="text" id="prompt-input" placeholder="Message Kiemaen AI..." autocomplete="off"
+                        class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 md:px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 md:px-5 py-2.5 rounded-lg text-sm font-semibold transition">
+                        Send
+                    </button>
                 </div>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-500 px-5 py-2 rounded text-sm font-semibold transition-colors shadow-md">Send Prompt</button>
-            </div>
-        </form>
+                <div class="flex items-center justify-between text-xs text-gray-400 px-1">
+                    <label class="cursor-pointer flex items-center gap-1 hover:text-blue-400 py-1">
+                        <span>📎 Attach File</span>
+                        <input type="file" id="file-input" class="hidden" accept=".py,.txt,.md,.json,.csv,.js,.ts">
+                    </label>
+                    <span id="file-name" class="italic text-gray-500 truncate max-w-[200px]">No file attached</span>
+                </div>
+            </form>
+        </div>
+
     </div>
 
     <script>
-        function triggerMathRender() {
-            renderMathInElement(document.body, {
-                delimiters: [
-                    {left: '$$', right: '$$', display: true},
-                    {left: '$', right: '$', display: false},
-                    {left: '\\(', right: '\\)', display: false},
-                    {left: '\\[', right: '\\]', display: true}
-                ]
-            });
-        }
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('prompt-input');
+        const container = document.getElementById('chat-container');
+        const personaSelect = document.getElementById('persona');
+        const historyList = document.getElementById('history-list');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name');
 
-        document.getElementById('chat-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const prompt = document.getElementById('prompt-input').value;
-            const persona = document.getElementById('persona').value;
-            const fileInput = document.getElementById('file-input').files[0];
-            const chatContainer = document.getElementById('chat-container');
+        let attachedFileContent = "";
 
-            if (!prompt.trim()) return;
-
-            // Append User Message
-            chatContainer.innerHTML += `<div class="text-right"><div class="inline-block bg-blue-600 text-white rounded p-3 text-sm max-w-[85%] text-left">${prompt}</div></div>`;
-            document.getElementById('prompt-input').value = '';
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-
-            const formData = new FormData();
-            formData.append('prompt', prompt);
-            formData.append('persona', persona);
-            if (fileInput) formData.append('file', fileInput);
-
-            try {
-                // FIXED: Target /generate instead of /api/generate to match FastAPI route
-                const response = await fetch('/generate', { method: 'POST', body: formData });
-                const data = await response.json();
-                
-                // Append AI Response
-                chatContainer.innerHTML += `<div class="text-left"><div class="inline-block bg-slate-700 text-slate-100 rounded p-3 text-sm max-w-[85%]">${data.response}</div></div>`;
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-                
-                // Trigger KaTeX rendering pass on newly injected content
-                triggerMathRender();
-            } catch (err) {
-                console.error("Transmission error:", err);
-                chatContainer.innerHTML += `<div class="text-left"><div class="inline-block bg-red-600/30 text-red-300 rounded p-3 text-sm max-w-[85%]">Critical Link Failure: Unable to reach Kiemaen Core.</div></div>`;
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    attachedFileContent = event.target.result;
+                };
+                reader.readAsText(file);
+            } else {
+                fileNameDisplay.textContent = "No file attached";
+                attachedFileContent = "";
             }
         });
+
+        async function loadHistory() {
+            if (!historyList) return;
+            try {
+                const res = await fetch('/history');
+                const data = await res.json();
+                if (data.history && data.history.length > 0) {
+                    historyList.innerHTML = '';
+                    data.history.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = "p-2 bg-gray-700/50 rounded border border-gray-700 hover:bg-gray-700 cursor-pointer";
+                        div.innerHTML = `
+                            <div class="font-semibold text-blue-300 uppercase text-[10px]">${item.persona}</div>
+                            <div class="truncate text-gray-200">${escapeHtml(item.user_prompt)}</div>`;
+                        historyList.appendChild(div);
+                    });
+                } else {
+                    historyList.innerHTML = '<div class="p-2 text-gray-500 italic">No history found.</div>';
+                }
+            } catch (err) {
+                historyList.innerHTML = '<div class="p-2 text-red-400 italic">Failed to load history.</div>';
+            }
+        }
+
+        async function clearHistory() {
+            if (!confirm("Clear all chat history?")) return;
+            try {
+                const res = await fetch('/history/clear', { method: 'DELETE' });
+                if (res.ok) {
+                    loadHistory();
+                    container.innerHTML = `
+                        <div class="flex justify-start">
+                            <div class="bg-gray-800 p-3 rounded-lg max-w-xl text-sm border border-gray-700">
+                                History cleared. Kiemaen AI ready.
+                            </div>
+                        </div>`;
+                }
+            } catch (err) {
+                alert("Connection error.");
+            }
+        }
+
+        loadHistory();
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let text = input.value.trim();
+            const persona = personaSelect.value;
+            
+            if (!text && !attachedFileContent) return;
+
+            if (attachedFileContent) {
+                text = `${text}\n\n[Attached File Context]:\n\`\`\`\n${attachedFileContent}\n\`\`\``;
+            }
+
+            // Append User Message
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = "flex justify-end";
+            userMsgDiv.innerHTML = `
+                <div class="bg-blue-600 text-white p-3 rounded-lg max-w-[85%] md:max-w-xl text-sm whitespace-pre-wrap">
+                    ${escapeHtml(input.value.trim())} ${fileInput.files[0] ? `📎 (${fileInput.files[0].name})` : ''}
+                </div>`;
+            container.appendChild(userMsgDiv);
+            
+            input.value = '';
+            fileInput.value = '';
+            fileNameDisplay.textContent = "No file attached";
+            const currentFileContentToSend = text;
+            attachedFileContent = "";
+
+            container.scrollTop = container.scrollHeight;
+
+            // Append Loading Indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = "flex justify-start";
+            loadingDiv.innerHTML = `
+                <div class="bg-gray-800 text-gray-400 p-3 rounded-lg text-sm border border-gray-700 animate-pulse">
+                    Thinking...
+                </div>`;
+            container.appendChild(loadingDiv);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: currentFileContentToSend, persona: persona })
+                });
+                const data = await response.json();
+                
+                if (container.contains(loadingDiv)) {
+                    container.removeChild(loadingDiv);
+                }
+
+                const aiReply = data.response || data.detail || "Error generating response.";
+                const parsedMarkdown = marked.parse(aiReply);
+
+                const aiMsgDiv = document.createElement('div');
+                aiMsgDiv.className = "flex justify-start";
+                aiMsgDiv.innerHTML = `
+                    <div class="bg-gray-800 p-4 rounded-lg max-w-[90%] md:max-w-2xl text-sm border border-gray-700 space-y-2 leading-relaxed overflow-x-auto">
+                        ${parsedMarkdown}
+                    </div>`;
+                container.appendChild(aiMsgDiv);
+                
+                loadHistory();
+            } catch (err) {
+                if (container.contains(loadingDiv)) {
+                    container.removeChild(loadingDiv);
+                }
+                const errorDiv = document.createElement('div');
+                errorDiv.className = "flex justify-start";
+                errorDiv.innerHTML = `
+                    <div class="bg-red-900 text-red-200 p-3 rounded-lg text-sm border border-red-700">
+                        Connection error with Kiemaen AI backend.
+                    </div>`;
+                container.appendChild(errorDiv);
+            }
+            container.scrollTop = container.scrollHeight;
+        });
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
     </script>
 </body>
 </html>
