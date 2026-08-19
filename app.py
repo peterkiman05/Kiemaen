@@ -1,10 +1,12 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
-import requests
+import httpx
 import yfinance as yf
 from supabase import create_client, Client
+from pypdf import PdfReader
+import io
 
 app = FastAPI(title="Kiemaen AI - Ultimate Intelligence Core")
 
@@ -20,14 +22,10 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-class ChatRequest(BaseModel):
-    prompt: str
-    persona: str = "general"
-
 PERSONAS = {
     "general": "You are Kiemaen AI, an elite, highly competent, and versatile personal AI collaborator engineered for maximum precision, efficiency, and speed.",
-    "engineering": "You are Kiemaen AI acting as a senior civil engineering consultant specializing in structural analysis, mechanics of materials, and design eurocodes/standards. Always structure complex calculations, parameters, formulas, and results using clean Markdown tables.",
-    "trading": "You are Kiemaen AI acting as a master institutional trading mentor specializing in proprietary risk parameters, automated execution plans, and technical analysis. CRITICAL RULE: When live market feed context is injected (such as Gold/XAUUSD live rates), you MUST construct all support, resistance, entry, stop-loss, and take-profit targets strictly around those exact real-time live prices. Format all risk metrics (Risk-to-Reward, Lot Size, Max Drawdown) inside pristine markdown data tables.",
+    "engineering": "You are Kiemaen AI acting as a senior civil engineering consultant specializing in structural analysis, mechanics of materials, and design codes. Always structure complex calculations, parameters, formulas, and results using clean Markdown tables.",
+    "trading": "You are Kiemaen AI acting as a master institutional trading mentor specializing in proprietary risk parameters, automated execution plans, and technical analysis. CRITICAL RULE: When live market feed context is injected, construct all support, resistance, entry, stop-loss, and take-profit targets strictly around those exact real-time live prices. Format all risk metrics inside pristine markdown data tables.",
     "coding": "You are Kiemaen AI acting as a Principal Software Engineer proficient in Python, TypeScript, and cloud containerization architecture. Always provide modular, bug-free, production-ready code blocks accompanied by precise execution details."
 }
 
@@ -60,17 +58,40 @@ def home():
     return "<h3>Kiemaen AI Core Online (index.html missing)</h3>"
 
 @app.post("/generate")
-def generate_ai(request: ChatRequest):
-    system_prompt = PERSONAS.get(request.persona, PERSONAS["general"])
+async def generate_ai(
+    prompt: str = Form(...),
+    persona: str = Form("general"),
+    file: UploadFile = File(None)
+):
+    system_prompt = PERSONAS.get(persona, PERSONAS["general"])
     ai_response = "AI processing service offline."
 
-    enhanced_prompt = request.prompt
-    if request.persona == "trading" or "gold" in request.prompt.lower() or "xauusd" in request.prompt.lower():
-        market_feed = fetch_live_market_data(request.prompt)
+    enhanced_prompt = prompt
+    if persona == "trading" or "gold" in prompt.lower() or "xauusd" in prompt.lower():
+        market_feed = fetch_live_market_data(prompt)
         if market_feed:
             enhanced_prompt += market_feed
 
-    # Pull prior message context from Supabase if available for conversational continuity
+    # Handle file uploads (Supports text files and PDFs natively)
+    if file:
+        file_bytes = await file.read()
+        extracted_text = ""
+        if file.filename.endswith(".pdf"):
+            try:
+                reader = PdfReader(io.BytesIO(file_bytes))
+                for page in reader.pages:
+                    extracted_text += page.extract_text() or ""
+            except Exception as pdf_err:
+                extracted_text = f"[Error reading PDF: {pdf_err}]"
+        else:
+            try:
+                extracted_text = file_bytes.decode("utf-8", errors="ignore")
+            except Exception:
+                extracted_text = "[Binary file uploaded]"
+        
+        enhanced_prompt += f"\n\n[Attached File Content ({file.filename})]:\n```\n{extracted_text[:10000]}\n```"
+
+    # Pull prior message context from Supabase
     recent_messages = [{"role": "system", "content": system_prompt}]
     if supabase:
         try:
@@ -91,16 +112,17 @@ def generate_ai(request: ChatRequest):
                 "Content-Type": "application/json"
             }
             payload = {
-                "model": "openai/gpt-oss-120b",  # Updated active production model endpoint
+                "model": "openai/gpt-oss-120b",
                 "messages": recent_messages,
                 "temperature": 0.5
             }
-            response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
-            if response.status_code == 200:
-                data = response.json()
-                ai_response = data["choices"][0]["message"]["content"]
-            else:
-                ai_response = f"API Error ({response.status_code}): {response.text}"
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    ai_response = data["choices"][0]["message"]["content"]
+                else:
+                    ai_response = f"API Error ({response.status_code}): {response.text}"
         except Exception as e:
             ai_response = f"Network routing error: {str(e)}"
     else:
@@ -109,8 +131,8 @@ def generate_ai(request: ChatRequest):
     if supabase:
         try:
             supabase.table("chat_history").insert({
-                "persona": request.persona,
-                "user_prompt": request.prompt,
+                "persona": persona,
+                "user_prompt": prompt,
                 "ai_response": ai_response
             }).execute()
         except Exception as db_error:
