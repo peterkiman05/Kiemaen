@@ -1,223 +1,441 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kiemaen AI - Ultimate Core</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <script src="[https://cdn.jsdelivr.net/npm/marked/marked.min.js](https://cdn.jsdelivr.net/npm/marked/marked.min.js)"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiemaen AI - Ultimate Intelligence Core</title>
     <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #131b2e;
+            --accent-color: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
         body {
-            position: fixed;
-            width: 100%;
-            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1f2937; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+
+        header {
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22c55e;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        .controls-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        select {
+            background: var(--bg-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem;
+            overflow: hidden;
+        }
+
+        #chat-window {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding-right: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .message {
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            line-height: 1.6;
+            max-width: 85%;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.user {
+            background: #1e293b;
+            color: var(--text-primary);
+            align-self: flex-end;
+            border: 1px solid #334155;
+        }
+
+        .message.ai {
+            background: var(--panel-bg);
+            color: var(--text-primary);
+            align-self: flex-start;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .speak-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .speak-btn:hover {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .file-upload-label:hover {
+            border-color: var(--accent-color);
+            color: var(--text-primary);
+        }
+
+        .input-form {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        textarea {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            resize: none;
+            outline: none;
+            font-size: 0.95rem;
+            min-height: 50px;
+            max-height: 150px;
+        }
+
+        .input-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        button.action-btn {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+
+        button.action-btn:hover {
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .mic-btn {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.6rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .mic-btn.listening {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        #file-name-display {
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            margin-left: 0.5rem;
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 flex flex-col md:flex-row">
+<body>
 
-    <!-- History Sidebar -->
-    <aside class="w-64 bg-gray-800 border-r border-gray-700 hidden md:flex flex-col h-full">
-        <div class="p-4 border-b border-gray-700 font-bold text-blue-400 flex justify-between items-center">
-            <span>Chat History</span>
-            <div class="flex gap-1">
-                <button onclick="loadHistory()" class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-gray-300" title="Refresh">🔄</button>
-                <button onclick="clearHistory()" class="text-xs bg-red-900/60 hover:bg-red-800 px-2 py-1 rounded text-red-200" title="Clear History">🗑️</button>
-            </div>
+    <header>
+        <div class="logo-area">
+            <div class="status-dot"></div>
+            <h1>Kiemaen AI <span style="color:var(--text-secondary); font-weight:400; font-size:0.9rem;">Core v9.0</span></h1>
         </div>
-        <div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-2 text-xs text-gray-300">
-            <div class="p-2 text-gray-500 italic">Loading history...</div>
-        </div>
-    </aside>
-
-    <!-- Main Chat Area -->
-    <div class="flex-1 flex flex-col h-full relative">
-        
-        <!-- Header & Persona Selector -->
-        <header class="bg-gray-800 p-3 md:p-4 border-b border-gray-700 flex justify-between items-center shadow-md z-10">
-            <h1 class="text-lg md:text-xl font-bold text-blue-400">Kiemaen AI</h1>
-            <select id="persona" class="bg-gray-700 text-xs md:text-sm p-2 rounded border border-gray-600 focus:outline-none text-white">
-                <option value="general">General AI</option>
-                <option value="engineering">Civil Engineering</option>
-                <option value="trading">Financial Trading</option>
-                <option value="coding">Software Coding</option>
+        <div class="controls-group">
+            <select id="persona-select">
+                <option value="general">General Intelligent Core</option>
+                <option value="engineering">Civil Engineering Consultant</option>
+                <option value="trading">Institutional Trading Mentor</option>
+                <option value="coding">Principal Software Engineer</option>
             </select>
-        </header>
+        </div>
+    </header>
 
-        <!-- Chat Messages Box -->
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto pb-36 md:pb-28">
-            <div class="flex justify-start">
-                <div class="bg-gray-800 p-3 rounded-lg max-w-[85%] md:max-w-xl text-sm border border-gray-700">
-                    Kiemaen AI Computational Core online. Ready for prompts, equations, code, or document analysis.
+    <div class="main-container">
+        <div id="chat-window">
+            <div class="message ai">
+                <div class="ai-header">
+                    <span>KIEMAEN SYSTEM ONLINE</span>
                 </div>
+                Greetings. Autonomous research nodes, secure simulation sandboxes, voice interface, and state persistence are fully active. How shall we execute today?
             </div>
         </div>
 
-        <!-- Fixed Bottom Input Form -->
-        <div class="fixed bottom-0 left-0 right-0 bg-gray-800/95 backdrop-blur border-t border-gray-700 p-3 md:p-4 z-20 pb-6 md:pb-4 shadow-lg">
-            <form id="chat-form" class="max-w-3xl mx-auto flex flex-col gap-2">
-                <div class="flex gap-2">
-                    <input type="text" id="prompt-input" placeholder="Message Kiemaen AI..." autocomplete="off"
-                        class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 md:px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 md:px-5 py-2.5 rounded-lg text-sm font-semibold transition">
-                        Send
-                    </button>
-                </div>
-                <div class="flex items-center justify-between text-xs text-gray-400 px-1">
-                    <label class="cursor-pointer flex items-center gap-1 hover:text-blue-400 py-1">
-                        <span>📎 Attach File / PDF</span>
-                        <input type="file" id="file-input" class="hidden" accept=".py,.txt,.md,.json,.csv,.js,.ts,.pdf">
+        <form id="chat-form" class="input-form">
+            <textarea id="prompt-input" placeholder="Type your prompt or use voice recording..." rows="2" required></textarea>
+            <div class="input-actions">
+                <div class="action-buttons">
+                    <label class="file-upload-label" for="file-input">
+                        📎 Attach File
                     </label>
-                    <span id="file-name" class="italic text-gray-500 truncate max-w-[200px]">No file attached</span>
+                    <input type="file" id="file-input">
+                    <span id="file-name-display"></span>
                 </div>
-            </form>
-        </div>
-
+                <div class="action-buttons">
+                    <button type="button" id="mic-btn" class="mic-btn" title="Speech to Text">🎙️ Speak</button>
+                    <button type="submit" class="action-btn">Execute ➔</button>
+                </div>
+            </div>
+        </form>
     </div>
 
     <script>
-        const form = document.getElementById('chat-form');
-        const input = document.getElementById('prompt-input');
-        const container = document.getElementById('chat-container');
-        const personaSelect = document.getElementById('persona');
-        const historyList = document.getElementById('history-list');
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const promptInput = document.getElementById('prompt-input');
+        const personaSelect = document.getElementById('persona-select');
         const fileInput = document.getElementById('file-input');
-        const fileNameDisplay = document.getElementById('file-name');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const micBtn = document.getElementById('mic-btn');
+
+        let selectedFile = null;
 
         fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                fileNameDisplay.textContent = file.name;
-            } else {
-                fileNameDisplay.textContent = "No file attached";
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                fileNameDisplay.textContent = selectedFile.name;
             }
         });
 
-        async function loadHistory() {
-            if (!historyList) return;
-            try {
-                const res = await fetch('/history');
-                const data = await res.json();
-                if (data.history && data.history.length > 0) {
-                    historyList.innerHTML = '';
-                    data.history.forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = "p-2 bg-gray-700/50 rounded border border-gray-700 hover:bg-gray-700 cursor-pointer";
-                        div.innerHTML = `
-                            <div class="font-semibold text-blue-300 uppercase text-[10px]">${item.persona}</div>
-                            <div class="truncate text-gray-200">${escapeHtml(item.user_prompt)}</div>`;
-                        historyList.appendChild(div);
-                    });
-                } else {
-                    historyList.innerHTML = '<div class="p-2 text-gray-500 italic">No history found.</div>';
+        // Speech Recognition (Speech to Text)
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            micBtn.addEventListener('click', () => {
+                if (micBtn.classList.contains('listening')) {
+                    recognition.stop();
+                    return;
                 }
-            } catch (err) {
-                historyList.innerHTML = '<div class="p-2 text-red-400 italic">Failed to load history.</div>';
+                recognition.start();
+            });
+
+            recognition.onstart = () => {
+                micBtn.classList.add('listening');
+                micBtn.textContent = '🔴 Listening...';
+            };
+
+            recognition.onresult = (event) => {
+                const speechToText = event.results[0][0].transcript;
+                promptInput.value += (promptInput.value ? ' ' : '') + speechToText;
+            };
+
+            recognition.onerror = () => {
+                micBtn.classList.remove('listening');
+                micBtn.textContent = '🎙️ Speak';
+            };
+
+            recognition.onend = () => {
+                micBtn.classList.remove('listening');
+                micBtn.textContent = '🎙️ Speak';
+            };
+        } else {
+            micBtn.style.display = 'none'; // Hide if browser doesn't support
+        }
+
+        // Text to Speech Function
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop prior audio
+                // Strip markdown backticks/code tags for clean speech output
+                const cleanText = text.replace(/```[\s\S]*?```/g, "Code block omitted for voice.")
+                                      .replace(/[*#_`-]/g, '');
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Text-to-speech not supported in this browser.');
             }
         }
 
-        async function clearHistory() {
-            if (!confirm("Clear all chat history?")) return;
-            try {
-                const res = await fetch('/history/clear', { method: 'DELETE' });
-                if (res.ok) {
-                    loadHistory();
-                    container.innerHTML = `
-                        <div class="flex justify-start">
-                            <div class="bg-gray-800 p-3 rounded-lg max-w-xl text-sm border border-gray-700">
-                                History cleared. Kiemaen AI ready.
-                            </div>
-                        </div>`;
-                }
-            } catch (err) {
-                alert("Connection error.");
-            }
-        }
-
-        loadHistory();
-
-        form.addEventListener('submit', async (e) => {
+        chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            let text = input.value.trim();
-            const persona = personaSelect.value;
-            const file = fileInput.files[0];
-            
-            if (!text && !file) return;
+            const promptText = promptInput.value.trim();
+            if (!promptText && !selectedFile) return;
 
+            // Append User Message
             const userMsgDiv = document.createElement('div');
-            userMsgDiv.className = "flex justify-end";
-            userMsgDiv.innerHTML = `
-                <div class="bg-blue-600 text-white p-3 rounded-lg max-w-[85%] md:max-w-xl text-sm whitespace-pre-wrap">
-                    ${escapeHtml(text)} ${file ? `📎 (${file.name})` : ''}
-                </div>`;
-            container.appendChild(userMsgDiv);
+            userMsgDiv.className = 'message user';
+            userMsgDiv.textContent = promptText + (selectedFile ? ` [Attached: ${selectedFile.name}]` : '');
+            chatWindow.appendChild(userMsgDiv);
             
-            input.value = '';
+            const currentPrompt = promptText;
+            const currentPersona = personaSelect.value;
+            const currentFile = selectedFile;
+
+            // Reset Input
+            promptInput.value = '';
             fileInput.value = '';
-            fileNameDisplay.textContent = "No file attached";
+            selectedFile = null;
+            fileNameDisplay.textContent = '';
+            chatWindow.scrollTop = chatWindow.scrollHeight;
 
-            container.scrollTop = container.scrollHeight;
+            // Append Loading AI Placeholder
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.className = 'message ai';
+            aiMsgDiv.innerHTML = `<div class="ai-header"><span>KIEMAEN AGENT RUNNING...</span></div>Processing swarm telemetry...`;
+            chatWindow.appendChild(aiMsgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
 
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = "flex justify-start";
-            loadingDiv.innerHTML = `
-                <div class="bg-gray-800 text-gray-400 p-3 rounded-lg text-sm border border-gray-700 animate-pulse">
-                    Computing & Thinking...
-                </div>`;
-            container.appendChild(loadingDiv);
-            container.scrollTop = container.scrollHeight;
+            const formData = new FormData();
+            formData.append('prompt', currentPrompt);
+            formData.append('persona', currentPersona);
+            if (currentFile) {
+                formData.append('file', currentFile);
+            }
 
             try {
-                const formData = new FormData();
-                formData.append("prompt", text || "Analyze attached file");
-                formData.append("persona", persona);
-                if (file) {
-                    formData.append("file", file);
-                }
-
                 const response = await fetch('/generate', {
                     method: 'POST',
                     body: formData
                 });
                 const data = await response.json();
                 
-                if (container.contains(loadingDiv)) {
-                    container.removeChild(loadingDiv);
-                }
-
-                const aiReply = data.response || data.detail || "Error generating response.";
-                const parsedMarkdown = marked.parse(aiReply);
-
-                const aiMsgDiv = document.createElement('div');
-                aiMsgDiv.className = "flex justify-start";
-                aiMsgDiv.innerHTML = `
-                    <div class="bg-gray-800 p-4 rounded-lg max-w-[90%] md:max-w-2xl text-sm border border-gray-700 space-y-2 leading-relaxed overflow-x-auto">
-                        ${parsedMarkdown}
-                    </div>`;
-                container.appendChild(aiMsgDiv);
+                const responseText = data.response || "No response received.";
                 
-                loadHistory();
+                aiMsgDiv.innerHTML = `
+                    <div class="ai-header">
+                        <span>KIEMAEN AI (${currentPersona.toUpperCase()})</span>
+                        <button class="speak-btn" onclick="speakText(this.dataset.text)" data-text="${encodeURIComponent(responseText)}">🔊 Listen</button>
+                    </div>
+                    ${escapeHtml(responseText)}
+                `;
             } catch (err) {
-                if (container.contains(loadingDiv)) {
-                    container.removeChild(loadingDiv);
-                }
-                const errorDiv = document.createElement('div');
-                errorDiv.className = "flex justify-start";
-                errorDiv.innerHTML = `
-                    <div class="bg-red-900 text-red-200 p-3 rounded-lg text-sm border border-red-700">
-                        Connection error with Kiemaen AI backend.
-                    </div>`;
-                container.appendChild(errorDiv);
+                aiMsgDiv.innerHTML = `<div class="ai-header"><span>ERROR</span></div>Network or server processing fault: ${err.message}`;
             }
-            container.scrollTop = container.scrollHeight;
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         });
 
         function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
         }
     </script>
 </body>
