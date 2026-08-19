@@ -12,7 +12,7 @@ from supabase import create_client, Client
 from pypdf import PdfReader
 from duckduckgo_search import DDGS
 
-app = FastAPI(title="Kiemaen AI - Distributed Swarm Orchestrator Core")
+app = FastAPI(title="Kiemaen AI - Neural Retrieval Core")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -33,20 +33,20 @@ PERSONAS = {
     "coding": "You are Kiemaen AI acting as a Principal Software Engineer proficient in Python, TypeScript, and cloud containerization architecture. Always provide modular, bug-free, production-ready code blocks accompanied by precise execution details."
 }
 
-def swarm_research_agent(query: str) -> str:
-    """Swarm Agent Node 1: Independent web information gatherer."""
+def neural_research_agent(query: str) -> str:
+    """Neural Node 1: Autonomous live research fetcher."""
     try:
         with DDGS() as ddgs:
             results = [r for r in ddgs.text(query, max_results=3)]
             if results:
                 snippets = "\n".join([f"- Title: {r.get('title')}\n  Snippet: {r.get('body')}" for r in results])
-                return f"\n\n[Swarm Research Agent Telemetry]:\n{snippets}"
+                return f"\n\n[Neural Research Context]:\n{snippets}"
     except Exception as e:
-        print(f"Swarm research error: {e}")
+        print(f"Neural research error: {e}")
     return ""
 
-def swarm_computation_agent(code_string: str) -> str:
-    """Swarm Agent Node 2: Isolated mathematical execution sandbox with self-healing feedback."""
+def neural_computation_agent(code_string: str) -> str:
+    """Neural Node 2: Secure code execution sandbox with error recovery."""
     for attempt in range(2):
         output = io.StringIO()
         try:
@@ -59,15 +59,15 @@ def swarm_computation_agent(code_string: str) -> str:
             
             captured = output.getvalue()
             if local_vars.get("result") is not None:
-                captured += f"\n[Swarm Computed Result]: {local_vars['result']}"
-            return captured.strip() or "Swarm execution node verified successfully."
+                captured += f"\n[Neural Computed Result]: {local_vars['result']}"
+            return captured.strip() or "Neural code execution verified successfully."
         except Exception as e:
             if attempt == 0:
                 error_msg = str(e)
-                code_string += f"\n# Swarm Self-Healing Adjustment: resolved error pattern -> {error_msg}"
+                code_string += f"\n# Neural Auto-Patch: handled error -> {error_msg}"
                 continue
-            return f"Swarm Execution Fault: {str(e)}\n{traceback.format_exc()}"
-    return "Swarm node aborted due to safety constraints."
+            return f"Neural Execution Fault: {str(e)}\n{traceback.format_exc()}"
+    return "Execution halted by neural safety filters."
 
 def fetch_live_market_data(prompt: str) -> str:
     prompt_lower = prompt.lower()
@@ -77,12 +77,12 @@ def fetch_live_market_data(prompt: str) -> str:
             ticker = yf.Ticker("GC=F")
             todays_data = ticker.history(period="1d")
             current_price = todays_data['Close'].iloc[-1] if not todays_data.empty else 4395.00
-            live_context = f"\n\n[SWARM MARKET FEED INJECTION]: Gold (XAUUSD / GC=F) live trading price is anchored at ${current_price:.2f} USD."
+            live_context = f"\n\n[NEURAL MARKET FEED]: Gold (XAUUSD / GC=F) live trading price is anchored at ${current_price:.2f} USD."
         elif "btc" in prompt_lower or "bitcoin" in prompt_lower:
             ticker = yf.Ticker("BTC-USD")
             todays_data = ticker.history(period="1d")
             current_price = todays_data['Close'].iloc[-1] if not todays_data.empty else 65000.00
-            live_context = f"\n\n[SWARM MARKET FEED INJECTION]: Bitcoin (BTC-USD) live trading price is anchored at ${current_price:.2f} USD."
+            live_context = f"\n\n[NEURAL MARKET FEED]: Bitcoin (BTC-USD) live trading price is anchored at ${current_price:.2f} USD."
     except Exception as e:
         print(f"Market fetch warning: {e}")
     return live_context
@@ -91,7 +91,7 @@ def fetch_live_market_data(prompt: str) -> str:
 def home():
     if os.path.exists("index.html"):
         return FileResponse("index.html")
-    return "<h3>Kiemaen AI Distributed Swarm Core Online</h3>"
+    return "<h3>Kiemaen AI Neural Retrieval Core Online</h3>"
 
 @app.post("/generate")
 async def generate_ai(
@@ -104,14 +104,14 @@ async def generate_ai(
 
     enhanced_prompt = prompt
     
-    # Swarm Node Interrogations
+    # 1. External Data Injections
     if persona == "trading" or any(k in prompt.lower() for k in ["gold", "xauusd", "btc", "bitcoin"]):
         market_feed = fetch_live_market_data(prompt)
         if market_feed:
             enhanced_prompt += market_feed
 
     if any(k in prompt.lower() for k in ["search", "latest", "documentation", "standard", "eurocode", "news", "how to"]):
-        research_context = swarm_research_agent(prompt)
+        research_context = neural_research_agent(prompt)
         if research_context:
             enhanced_prompt += research_context
 
@@ -131,19 +131,19 @@ async def generate_ai(
             except Exception:
                 extracted_text = "[Binary file uploaded]"
         
-        enhanced_prompt += f"\n\n[Attached Swarm Context Document ({file.filename})]:\n```\n{extracted_text[:10000]}\n```"
+        enhanced_prompt += f"\n\n[Attached Neural Document Context ({file.filename})]:\n```\n{extracted_text[:10000]}\n```"
 
-    # Assemble Distributed State History from Supabase
+    # 2. Context Assembly via Supabase Memory
     recent_messages = [{"role": "system", "content": system_prompt}]
     if supabase:
         try:
-            history_res = supabase.table("chat_history").select("user_prompt, ai_response").order("created_at", desc=False).limit(6).execute()
+            history_res = supabase.table("chat_history").select("user_prompt, ai_response").order("created_at", desc=False).limit(8).execute()
             if history_res.data:
                 for row in history_res.data:
                     recent_messages.append({"role": "user", "content": row["user_prompt"]})
                     recent_messages.append({"role": "assistant", "content": row["ai_response"]})
         except Exception as ex:
-            print(f"Swarm state sync error: {ex}")
+            print(f"Neural memory sync error: {ex}")
     
     recent_messages.append({"role": "user", "content": enhanced_prompt})
 
@@ -164,17 +164,17 @@ async def generate_ai(
                     data = response.json()
                     ai_response = data["choices"][0]["message"]["content"]
                     
-                    # Swarm Computation Execution Pass
+                    # 3. Execution Sandbox Pass
                     if "```python:run" in ai_response:
                         try:
                             start_idx = ai_response.find("```python:run") + 13
                             end_idx = ai_response.find("```", start_idx)
                             if end_idx != -1:
                                 code_to_run = ai_response[start_idx:end_idx].strip()
-                                execution_output = swarm_computation_agent(code_to_run)
-                                ai_response += f"\n\n**Swarm Distributed Execution Log:**\n```text\n{execution_output}\n```"
+                                execution_output = neural_computation_agent(code_to_run)
+                                ai_response += f"\n\n**Neural Execution & Verification Log:**\n```text\n{execution_output}\n```"
                         except Exception as exec_err:
-                            print(f"Swarm execution error: {exec_err}")
+                            print(f"Neural execution runner error: {exec_err}")
                 else:
                     ai_response = f"API Error ({response.status_code}): {response.text}"
         except Exception as e:
