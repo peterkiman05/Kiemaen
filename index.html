@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiemaen AI - Ultimate Intelligence Core</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.js"></script>
+    <title>Kiemaen AI - Autonomous Core</title>
+    <!-- Fix for 'marked is not defined' error -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -60,20 +61,15 @@
             font-weight: 600;
         }
 
-        /* Clean Dropdown / Drawer Panel */
-        .select-wrapper {
-            position: relative;
-        }
-
-        select {
+        /* Auto-detector status display badge in header */
+        .auto-status {
             background: var(--bg-color);
-            color: var(--text-primary);
             border: 1px solid var(--border-color);
-            padding: 0.4rem 0.8rem;
-            border-radius: 0.4rem;
-            outline: none;
-            cursor: pointer;
-            font-size: 0.85rem;
+            color: var(--accent-color);
+            padding: 0.3rem 0.7rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
 
         .main-container {
@@ -211,13 +207,19 @@
             padding-top: 0.4rem;
         }
 
-        .action-buttons {
+        .action-left {
             display: flex;
-            gap: 0.5rem;
             align-items: center;
+            gap: 0.5rem;
         }
 
-        /* Symbol Icon Buttons */
+        .action-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* SVG Icon Buttons */
         .icon-btn {
             background: var(--bg-color);
             border: 1px solid var(--border-color);
@@ -229,8 +231,13 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 1rem;
             transition: all 0.2s;
+        }
+
+        .icon-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
         }
 
         .icon-btn:hover {
@@ -252,12 +259,17 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: box-shadow 0.2s;
+        }
+
+        button.execute-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--bg-color);
         }
 
         button.execute-btn:hover {
@@ -286,14 +298,8 @@
             <div class="status-dot"></div>
             <h1>Kiemaen AI</h1>
         </div>
-        <div class="select-wrapper">
-            <select id="persona-select" title="Auto-detecting Persona Panel">
-                <option value="general">General Core</option>
-                <option value="engineering">Civil Engineering</option>
-                <option value="trading">Institutional Trading</option>
-                <option value="coding">Software Engineering</option>
-            </select>
-        </div>
+        <!-- Auto-detector Status Badge replacing manual dropdown -->
+        <div id="detector-badge" class="auto-status">⚡ Auto: General Core</div>
     </header>
 
     <div class="main-container">
@@ -309,17 +315,23 @@
         <form id="chat-form" class="input-form">
             <textarea id="prompt-input" placeholder="Message Kiemaen AI..." rows="1" required></textarea>
             <div class="input-actions">
-                <div class="action-buttons">
-                    <!-- Symbol Attachment Button -->
-                    <label class="icon-btn" for="file-input" title="Attach Document">📎</label>
+                <!-- Left side: File attachment icon -->
+                <div class="action-left">
+                    <label class="icon-btn" for="file-input" title="Attach File">
+                        <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H9v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S5.5 2.79 5.5 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1z"/></svg>
+                    </label>
                     <input type="file" id="file-input">
                     <span id="file-indicator">📄 <span id="file-name-text"></span></span>
                 </div>
-                <div class="action-buttons">
-                    <!-- Symbol Voice Recording Button -->
-                    <button type="button" id="mic-btn" class="icon-btn" title="Voice Input">🎙️</button>
-                    <!-- Symbol Execute Button -->
-                    <button type="submit" class="execute-btn" title="Execute">➔</button>
+                
+                <!-- Right side: Voice recording and execution icons -->
+                <div class="action-right">
+                    <button type="button" id="mic-btn" class="icon-btn" title="Voice Input">
+                        <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.39-.9.89 0 2.79-2.25 5.04-5.04 5.04s-5.04-2.25-5.04-5.04c0-.5-.41-.89-.9-.89s-.9.39-.9.89c0 3.18 2.45 5.82 5.5 6.27V21h-2.5c-.55 0-1 .45-1 1s.45 1 1 1h7c.55 0 1-.45 1-1s-.45-1-1-1h-2.5v-2.84c3.05-.45 5.5-3.09 5.5-6.27 0-.5-.41-.89-.9-.89z"/></svg>
+                    </button>
+                    <button type="submit" class="execute-btn" title="Execute">
+                        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
                 </div>
             </div>
         </form>
@@ -329,13 +341,14 @@
         const chatWindow = document.getElementById('chat-window');
         const chatForm = document.getElementById('chat-form');
         const promptInput = document.getElementById('prompt-input');
-        const personaSelect = document.getElementById('persona-select');
         const fileInput = document.getElementById('file-input');
         const fileIndicator = document.getElementById('file-indicator');
         const fileNameText = document.getElementById('file-name-text');
         const micBtn = document.getElementById('mic-btn');
+        const detectorBadge = document.getElementById('detector-badge');
 
         let selectedFile = null;
+        let activePersona = 'general';
 
         // Auto-detect file selection
         fileInput.addEventListener('change', (e) => {
@@ -346,19 +359,25 @@
             }
         });
 
-        // Auto-detect prompt content to auto-switch personas (optional intelligence upgrade)
+        // Intelligent Auto-Detector: Analyzes user prompt to determine persona context
         promptInput.addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
-            if (val.includes('beam') || val.includes('stress') || val.includes('load') || val.includes('concrete')) {
-                personaSelect.value = 'engineering';
-            } else if (val.includes('price') || val.includes('trade') || val.includes('gold') || val.includes('bitcoin')) {
-                personaSelect.value = 'trading';
-            } else if (val.includes('def ') || val.includes('function') || val.includes('code') || val.includes('python')) {
-                personaSelect.value = 'coding';
+            if (val.includes('beam') || val.includes('stress') || val.includes('load') || val.includes('concrete') || val.includes('shear')) {
+                activePersona = 'engineering';
+                detectorBadge.textContent = '⚡ Auto: Civil Engineering';
+            } else if (val.includes('price') || val.includes('trade') || val.includes('gold') || val.includes('bitcoin') || val.includes('market')) {
+                activePersona = 'trading';
+                detectorBadge.textContent = '⚡ Auto: Institutional Trading';
+            } else if (val.includes('def ') || val.includes('function') || val.includes('code') || val.includes('python') || val.includes('script')) {
+                activePersona = 'coding';
+                detectorBadge.textContent = '⚡ Auto: Software Engineering';
+            } else {
+                activePersona = 'general';
+                detectorBadge.textContent = '⚡ Auto: General Core';
             }
         });
 
-        // Speech-to-Text Voice Recording Symbol
+        // Speech Recognition (Speech-to-Text)
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
             const recognition = new SpeechRecognition();
@@ -381,6 +400,7 @@
             recognition.onresult = (event) => {
                 const speechToText = event.results[0][0].transcript;
                 promptInput.value += (promptInput.value ? ' ' : '') + speechToText;
+                promptInput.dispatchEvent(new Event('input')); // Trigger auto-detector
             };
 
             recognition.onerror = () => {
@@ -414,13 +434,14 @@
             chatWindow.appendChild(userMsgDiv);
             
             const currentPrompt = promptText;
-            const currentPersona = personaSelect.value;
+            const currentPersona = activePersona;
             const currentFile = selectedFile;
 
             promptInput.value = '';
             fileInput.value = '';
             selectedFile = null;
             fileIndicator.style.display = 'none';
+            detectorBadge.textContent = '⚡ Auto: General Core';
             chatWindow.scrollTop = chatWindow.scrollHeight;
 
             const aiMsgDiv = document.createElement('div');
@@ -444,7 +465,7 @@
                 aiMsgDiv.innerHTML = `
                     <div class="ai-header">
                         <span>KIEMAEN AI (${currentPersona.toUpperCase()})</span>
-                        <button class="speak-btn" onclick="speakText(this.dataset.text)" data-text="${encodeURIComponent(responseText)}">🔊</button>
+                        <button class="speak-btn" onclick="speakText(this.dataset.text)" data-text="${encodeURIComponent(responseText)}">🔊 Listen</button>
                     </div>
                     ${marked.parse(responseText)}
                 `;
