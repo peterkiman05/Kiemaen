@@ -1,7 +1,10 @@
 fastapi
 uvicorn
 requests
+httpx
 yfinance
 supabase
 pypdf
 python-multipart
+sympy
+numpy
