@@ -6,10 +6,11 @@ import os
 
 app = FastAPI()
 
-# Explicitly initialize the client using the GEMINI_API_KEY environment variable
+# Explicitly initialize the client using the GEMINI_API_KEY and force Gemini Developer API mode
 try:
     api_key = os.environ.get("GEMINI_API_KEY")
-    client = genai.Client(api_key=api_key) if api_key else None
+    # vertexai=False forces it to use the standard API key instead of Google Cloud OAuth/ADC
+    client = genai.Client(api_key=api_key, vertexai=False) if api_key else None
 except Exception:
     client = None
 
@@ -36,7 +37,6 @@ async def generate_response(
             
         contents = [prompt]
         
-        # Handle optional file uploads (documents, text, images, etc.)
         if file:
             file_bytes = await file.read()
             contents.append(
@@ -46,7 +46,6 @@ async def generate_response(
                 )
             )
 
-        # Persona instructions mapping
         system_instructions = {
             "engineering": "You are Kiemaen AI configured as a professional Civil Engineering expert. Use precise calculations and technical standards.",
             "trading": "You are Kiemaen AI configured as an Institutional Trading core. Analyze market liquidity, technical patterns, and risk.",
@@ -59,11 +58,10 @@ async def generate_response(
 
         config = types.GenerateContentConfig(
             system_instruction=system_instructions.get(persona, system_instructions["general"]),
-            tools=[grounding_tool],  # Bypasses the knowledge cutoff by pulling live web data
+            tools=[grounding_tool],
             temperature=0.3
         )
 
-        # Generate response using model and live search tool
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=contents,
